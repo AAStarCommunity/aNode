@@ -1,5 +1,10 @@
 # Changes
 
+## Version 0.1.2
+
+- Added tutorials submodule to vendor folder from https://github.com/pimlicolabs/tutorials
+- This submodule provides educational content and examples for Pimlico account abstraction tools
+
 ## Version 0.1.1
 
 - Added permissionless.js submodule to vendor folder from https://github.com/pimlicolabs/permissionless.js
