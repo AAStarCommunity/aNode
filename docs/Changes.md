@@ -1,5 +1,13 @@
 # Changes
 
+## Version 0.1.4
+
+- Added comprehensive test case demo for aPaymaster server
+- Created end-to-end ERC-4337 UserOperation flow example
+- Demonstrated both sponsorship and ERC-20 payment modes
+- Included mock server implementation patterns
+- Added success criteria and error scenario testing guidelines
+
 ## Version 0.1.3
 
 - Added comprehensive Paymaster Server Design documentation
