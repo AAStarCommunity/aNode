@@ -1,5 +1,13 @@
 # Changes
 
+## Version 0.1.3
+
+- Added comprehensive Paymaster Server Design documentation
+- Analyzed permissionless.js and tutorial examples to reverse-engineer paymaster server interfaces
+- Created detailed workflow diagram and API specifications
+- Documented ERC-20 and sponsorship payment modes
+- Included security, scalability, and business logic considerations
+
 ## Version 0.1.2
 
 - Added tutorials submodule to vendor folder from https://github.com/pimlicolabs/tutorials
