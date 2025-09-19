@@ -1,0 +1,3 @@
+[submodule "vendor/singleton-paymaster"]
+	path = vendor/singleton-paymaster
+	url = https://github.com/pimlicolabs/singleton-paymaster
