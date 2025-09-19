@@ -4,3 +4,6 @@
 [submodule "vendor/permissionless.js"]
 	path = vendor/permissionless.js
 	url = https://github.com/pimlicolabs/permissionless.js
+[submodule "vendor/tutorials"]
+	path = vendor/tutorials
+	url = https://github.com/pimlicolabs/tutorials
