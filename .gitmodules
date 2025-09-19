@@ -7,3 +7,6 @@
 [submodule "vendor/tutorials"]
 	path = vendor/tutorials
 	url = https://github.com/pimlicolabs/tutorials
+[submodule "vendor/smart-account-frame-template"]
+	path = vendor/smart-account-frame-template
+	url = https://github.com/pimlicolabs/smart-account-frame-template
