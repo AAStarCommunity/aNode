@@ -13,3 +13,7 @@ We use Rust to develop a new simple version, you can deploy it to Cloudflare wit
 We reference the Nodejs paymaster from ZeroDev, thanks for their contribution.
 It act as a off chain signer(can rotate) after verifying their pre-setting rules(like only support specific contract, specific ERC-20 and more).
 
+## Register on SuperPaymaster to run
+This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this). 
+
+
