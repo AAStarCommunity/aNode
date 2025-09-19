@@ -1,5 +1,16 @@
 # Changes
 
+## Version 0.1.7
+
+- Created comprehensive Detailed System Design document for aPaymaster Relay Server
+- Designed modular Rust-based paymaster architecture with configurable filtering modules
+- Documented core modules: Request Handler, UserOperation Processor, Paymaster Service, Transaction Simulator, Filter Manager
+- Specified security filter modules: Phishing Detector, Amount Validator, Rate Limiter
+- Defined complete API interfaces with function signatures and parameter specifications
+- Included system interaction flows and configuration schemas
+- Added performance considerations, security measures, and self-assessment
+- Designed plugin-based architecture for independent filter development
+
 ## Version 0.1.6
 
 - Confirmed singleton-paymaster submodule is properly initialized
