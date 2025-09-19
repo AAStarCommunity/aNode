@@ -1,5 +1,13 @@
 # Changes
 
+## Version 0.1.8
+
+- Created comprehensive env.example configuration template
+- Included all configuration variables for Demo App, Rust Relay Server, Paymaster Service, Blockchain, Security Filters, Monitoring, and External Services
+- Organized configuration by functional areas with detailed comments
+- Provided sensible defaults and clear placeholder values
+- Covered development, testing, production, and performance tuning configurations
+
 ## Version 0.1.7
 
 - Created comprehensive Detailed System Design document for aPaymaster Relay Server
