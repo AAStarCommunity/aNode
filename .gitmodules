@@ -1,3 +1,6 @@
 [submodule "vendor/singleton-paymaster"]
 	path = vendor/singleton-paymaster
 	url = https://github.com/pimlicolabs/singleton-paymaster
+[submodule "vendor/permissionless.js"]
+	path = vendor/permissionless.js
+	url = https://github.com/pimlicolabs/permissionless.js
