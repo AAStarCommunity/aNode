@@ -1,5 +1,13 @@
 # Changes
 
+## Version 0.1.6
+
+- Confirmed singleton-paymaster submodule is properly initialized
+- Created relay-server/ directory with initialized Rust project (aapaymaster-relay)
+- Rust project successfully compiles and runs with `cargo check` and `cargo run`
+- Updated .gitignore to exclude Rust build artifacts (target/, Cargo.lock)
+- Cleaned up git repository by removing build artifacts from version control
+
 ## Version 0.1.5
 
 - Added Node.js .gitignore for proper project structure
