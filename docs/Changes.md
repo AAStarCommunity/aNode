@@ -1,5 +1,11 @@
 # Changes
 
+## Version 0.1.1
+
+- Added permissionless.js submodule to vendor folder from https://github.com/pimlicolabs/permissionless.js
+- This submodule provides TypeScript utilities built on viem for ERC-4337 account abstraction
+- Includes smart account management, bundler support, paymaster integration, and user operation utilities
+
 ## Version 0.1.0
 
 - Added singleton-paymaster submodule to vendor folder from https://github.com/pimlicolabs/singleton-paymaster
