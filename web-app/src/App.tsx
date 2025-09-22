@@ -10,15 +10,34 @@ import TransferTest from './components/TransferTest';
 import EnvConfigDisplay from './components/EnvConfigDisplay';
 import MetaMaskWallet from './components/MetaMaskWallet';
 import AccountDeployer from './components/AccountDeployer';
+import BundlerSelector, { BundlerConfig } from './components/BundlerSelector';
+import EntryPointSelector, { EntryPointConfig } from './components/EntryPointSelector';
 
 // Services
 import { BundlerService } from './services/bundlerService';
+import { AlchemyBundlerService } from './services/alchemyBundlerService';
 import { AccountService } from './services/accountService';
 import { NETWORKS, DEFAULT_NETWORK } from './config/networks';
+import { Network } from 'alchemy-sdk';
 
 function App() {
   const [selectedNetwork, setSelectedNetwork] = useState(DEFAULT_NETWORK);
+  const [selectedBundler, setSelectedBundler] = useState<BundlerConfig>({
+    name: 'SuperRelay Rundler',
+    type: 'rundler',
+    url: 'https://rundler-superrelay.fly.dev',
+    supportedEntryPoints: ['0.6'],
+    description: '自部署的 Rundler 服务，支持 EntryPoint v0.6'
+  });
+  const [selectedEntryPoint, setSelectedEntryPoint] = useState<EntryPointConfig>({
+    version: '0.6',
+    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    name: 'EntryPoint v0.6',
+    description: 'ERC-4337 原始版本，广泛支持',
+    supportedBundlers: ['rundler', 'alchemy']
+  });
   const [bundlerService, setBundlerService] = useState<BundlerService | null>(null);
+  const [alchemyBundlerService, setAlchemyBundlerService] = useState<AlchemyBundlerService | null>(null);
   const [accountService, setAccountService] = useState<AccountService | null>(null);
   const [connectedAccount, setConnectedAccount] = useState<string>('');
   const [signer, setSigner] = useState<any>(null);
@@ -31,32 +50,82 @@ function App() {
       return;
     }
 
-    console.log('初始化网络:', selectedNetwork, network);
+    console.log('初始化网络和Bundler:', selectedNetwork, network, selectedBundler, selectedEntryPoint);
 
     // 初始化 Bundler 服务
-    if (network.bundlerUrl) {
-      const bundler = new BundlerService(network.bundlerUrl);
-      setBundlerService(bundler);
-      console.log('Bundler 服务已初始化:', network.bundlerUrl);
-    } else {
-      console.warn('缺少 bundlerUrl 配置');
+    if (selectedBundler.type === 'rundler') {
+      if (network.bundlerUrl) {
+        const bundler = new BundlerService(network.bundlerUrl);
+        setBundlerService(bundler);
+        setAlchemyBundlerService(null);
+        console.log('Rundler 服务已初始化:', network.bundlerUrl);
+      } else {
+        console.warn('缺少 bundlerUrl 配置');
+      }
+    } else if (selectedBundler.type === 'alchemy') {
+      if (network.alchemy?.apiKey) {
+        // 获取 Alchemy 网络枚举
+        const alchemyNetwork = getAlchemyNetwork(network.alchemy.network);
+        const alchemy = new AlchemyBundlerService(
+          network.alchemy.apiKey,
+          alchemyNetwork,
+          selectedEntryPoint.version
+        );
+        setAlchemyBundlerService(alchemy);
+        setBundlerService(null);
+        console.log('Alchemy Bundler 服务已初始化:', network.alchemy.network, selectedEntryPoint.version);
+      } else {
+        console.warn('缺少 Alchemy API Key 配置');
+      }
     }
 
     // 初始化 Account 服务 (不需要私钥，将在运行时提供)
-    if (network.bundlerUrl) {
+    const bundlerUrl = selectedBundler.type === 'rundler' ? network.bundlerUrl : '';
+    if (bundlerUrl || selectedBundler.type === 'alchemy') {
       const account = new AccountService(
         network.rpcUrl,
-        network.bundlerUrl,
+        bundlerUrl || '',
         '', // 私钥将在执行时提供
-        network.contracts.entryPoint,
+        selectedEntryPoint.address,
         network.contracts.factory
       );
       setAccountService(account);
       console.log('Account 服务已初始化');
-    } else {
-      console.warn('缺少 bundlerUrl 配置');
     }
-  }, [selectedNetwork]);
+  }, [selectedNetwork, selectedBundler, selectedEntryPoint]);
+
+  // Bundler 变更处理
+  const handleBundlerChange = (bundler: BundlerConfig) => {
+    console.log('切换 Bundler:', bundler);
+    setSelectedBundler(bundler);
+
+    // 根据 bundler 类型自动调整 EntryPoint
+    if (bundler.type === 'rundler' && selectedEntryPoint.version !== '0.6') {
+      setSelectedEntryPoint({
+        version: '0.6',
+        address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+        name: 'EntryPoint v0.6',
+        description: 'ERC-4337 原始版本，广泛支持',
+        supportedBundlers: ['rundler', 'alchemy']
+      });
+    }
+  };
+
+  // EntryPoint 变更处理
+  const handleEntryPointChange = (entryPoint: EntryPointConfig) => {
+    console.log('切换 EntryPoint:', entryPoint);
+    setSelectedEntryPoint(entryPoint);
+  };
+
+  // 获取 Alchemy 网络枚举
+  const getAlchemyNetwork = (networkName: string): Network => {
+    const networkMap: Record<string, Network> = {
+      'eth-sepolia': Network.ETH_SEPOLIA,
+      'opt-sepolia': Network.OPT_SEPOLIA,
+      'opt-mainnet': Network.OPT_MAINNET,
+    };
+    return networkMap[networkName] || Network.ETH_SEPOLIA;
+  };
 
   return (
     <div className="app">
@@ -95,6 +164,19 @@ function App() {
             onNetworkChange={(chainId) => {
               console.log('Network changed to:', chainId);
             }}
+          />
+        </section>
+
+        {/* Bundler 选择器 */}
+        <section className="bundler-section">
+          <BundlerSelector
+            selectedBundler={selectedBundler}
+            onBundlerChange={handleBundlerChange}
+          />
+          <EntryPointSelector
+            selectedEntryPoint={selectedEntryPoint}
+            onEntryPointChange={handleEntryPointChange}
+            bundlerType={selectedBundler.type}
           />
         </section>
 

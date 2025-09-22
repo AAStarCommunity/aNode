@@ -11,9 +11,14 @@ export interface NetworkConfig {
   };
   contracts: {
     entryPoint: string;
+    entryPointV07?: string;  // EntryPoint v0.7 address
     factory: string;
   };
   bundlerUrl?: string;
+  alchemy?: {
+    network: string;  // Alchemy network identifier
+    apiKey?: string;  // Optional API key override
+  };
 }
 
 export const NETWORKS: Record<string, NetworkConfig> = {
@@ -28,10 +33,15 @@ export const NETWORKS: Record<string, NetworkConfig> = {
       decimals: 18,
     },
     contracts: {
-      entryPoint: import.meta.env.VITE_ENTRYPOINT_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      entryPoint: import.meta.env.VITE_ENTRYPOINT_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',  // v0.6
+      entryPointV07: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',  // v0.7
       factory: import.meta.env.VITE_FACTORY_ADDRESS || '0x9406Cc6185a346906296840746125a0E44976454',
     },
     bundlerUrl: import.meta.env.VITE_BUNDLER_URL || 'https://rundler-superrelay.fly.dev',
+    alchemy: {
+      network: 'eth-sepolia',
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY
+    }
   },
   opSepolia: {
     id: 11155420,
@@ -44,10 +54,15 @@ export const NETWORKS: Record<string, NetworkConfig> = {
       decimals: 18,
     },
     contracts: {
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',  // v0.6
+      entryPointV07: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',  // v0.7
       factory: '0x9406Cc6185a346906296840746125a0E44976454',
     },
     bundlerUrl: import.meta.env.VITE_BUNDLER_URL || 'https://rundler-superrelay.fly.dev',
+    alchemy: {
+      network: 'opt-sepolia',
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY
+    }
   },
   opMainnet: {
     id: 10,
@@ -60,10 +75,15 @@ export const NETWORKS: Record<string, NetworkConfig> = {
       decimals: 18,
     },
     contracts: {
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',  // v0.6
+      entryPointV07: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',  // v0.7
       factory: '0x9406Cc6185a346906296840746125a0E44976454',
     },
     bundlerUrl: import.meta.env.VITE_BUNDLER_URL || 'https://rundler-superrelay.fly.dev',
+    alchemy: {
+      network: 'opt-mainnet',
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY
+    }
   },
 };
 
