@@ -12,12 +12,14 @@
   "dependencies": {
     "@aa-sdk/core": "^4.64.0",
     "@account-kit/infra": "^4.64.0",
+    "@account-kit/smart-contracts": "^4.64.0",
     "alchemy-sdk": "^3.6.3",
     "axios": "^1.12.2",
     "ethers": "^6.15.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "styled-jsx": "^5.1.7"
+    "styled-jsx": "^5.1.7",
+    "viem": "^2.37.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",

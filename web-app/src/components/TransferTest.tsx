@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AccountService } from '../services/accountService';
 import type { TransferResult } from '../services/accountService';
 import { BundlerService } from '../services/bundlerService';
+import { AlchemyBundlerService } from '../services/alchemyBundlerService';
 import type { UserOpReceipt } from '../services/bundlerService';
 import type { NetworkConfig } from '../config/networks';
 import { getJiffyScanUrl, getBlockExplorerTxUrl } from '../config/networks';
@@ -13,8 +14,10 @@ import GasCalculatorAdvanced from './GasCalculatorAdvanced';
 interface TransferTestProps {
   accountService: AccountService | null;
   bundlerService: BundlerService | null;
+  alchemyBundlerService: AlchemyBundlerService | null;
   networkConfig: NetworkConfig;
   signer?: ethers.Signer | null; // 可选的 MetaMask signer
+  selectedBundlerType: string;
 }
 
 interface TransferState {
@@ -30,8 +33,10 @@ interface TransferState {
 const TransferTest: React.FC<TransferTestProps> = ({
   accountService,
   bundlerService,
+  alchemyBundlerService,
   networkConfig,
   signer,
+  selectedBundlerType,
 }) => {
   const [transferState, setTransferState] = useState<TransferState>({
     amount: '3',
@@ -315,7 +320,7 @@ const TransferTest: React.FC<TransferTestProps> = ({
           <button
             className="transfer-btn"
             onClick={executeTransfer}
-            disabled={transferState.isTransferring || !accountService || !bundlerService || (!import.meta.env.VITE_PRIVATE_KEY && !signer)}
+            disabled={transferState.isTransferring || !accountService || (!bundlerService && !alchemyBundlerService) || (!import.meta.env.VITE_PRIVATE_KEY && !signer)}
           >
             {transferState.isTransferring
               ? '🔄 Transferring...'

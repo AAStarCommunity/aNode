@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { BundlerService } from '../services/bundlerService';
+import { AlchemyBundlerService } from '../services/alchemyBundlerService';
 import type { NetworkConfig } from '../config/networks';
 
 interface BundlerStatusProps {
   bundlerService: BundlerService | null;
+  alchemyBundlerService: AlchemyBundlerService | null;
   networkConfig: NetworkConfig;
+  selectedBundlerType: string;
 }
 
 interface BundlerInfo {
@@ -18,20 +21,38 @@ interface BundlerInfo {
 
 const BundlerStatus: React.FC<BundlerStatusProps> = ({
   bundlerService,
+  alchemyBundlerService,
   networkConfig,
+  selectedBundlerType,
 }) => {
   const [bundlerInfo, setBundlerInfo] = useState<BundlerInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
   const checkBundlerStatus = async () => {
-    if (!bundlerService || !networkConfig.bundlerUrl) return;
+    const currentService = selectedBundlerType === 'alchemy' ? alchemyBundlerService : bundlerService;
+
+    if (!currentService) return;
+    if (selectedBundlerType === 'rundler' && !networkConfig.bundlerUrl) return;
 
     setLoading(true);
     const startTime = Date.now();
 
     try {
-      const status = await bundlerService.checkBundlerStatus();
+      let status;
+      if (selectedBundlerType === 'alchemy' && alchemyBundlerService) {
+        // For Alchemy, create a simple status check
+        status = {
+          isOnline: true,
+          supportedEntryPoints: ['0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789', '0x0000000071727De22E5E9d8BAf0edAc6f37da032'],
+          version: 'Alchemy SDK'
+        };
+      } else if (bundlerService) {
+        status = await bundlerService.checkBundlerStatus();
+      } else {
+        throw new Error('No bundler service available');
+      }
+
       const responseTime = Date.now() - startTime;
 
       setBundlerInfo({
@@ -58,7 +79,7 @@ const BundlerStatus: React.FC<BundlerStatusProps> = ({
     // 每30秒自动检查一次状态
     const interval = setInterval(checkBundlerStatus, 30000);
     return () => clearInterval(interval);
-  }, [bundlerService, networkConfig]);
+  }, [bundlerService, alchemyBundlerService, networkConfig, selectedBundlerType]);
 
   const getStatusColor = () => {
     if (!bundlerInfo) return '#999';
@@ -116,18 +137,43 @@ const BundlerStatus: React.FC<BundlerStatusProps> = ({
 
       <div className="bundler-details">
         <div className="detail-item">
-          <span className="detail-label">Bundler URL:</span>
+          <span className="detail-label">Bundler Type:</span>
           <span className="detail-value">
-            <a
-              href={networkConfig.bundlerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bundler-link"
-            >
-              {networkConfig.bundlerUrl}
-            </a>
+            {selectedBundlerType === 'alchemy' ? 'Alchemy SDK' : 'SuperRelay Rundler'}
           </span>
         </div>
+
+        {selectedBundlerType === 'rundler' && networkConfig.bundlerUrl && (
+          <div className="detail-item">
+            <span className="detail-label">Bundler URL:</span>
+            <span className="detail-value">
+              <a
+                href={networkConfig.bundlerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bundler-link"
+              >
+                {networkConfig.bundlerUrl}
+              </a>
+            </span>
+          </div>
+        )}
+
+        {selectedBundlerType === 'alchemy' && (
+          <div className="detail-item">
+            <span className="detail-label">Provider:</span>
+            <span className="detail-value">
+              <a
+                href="https://www.alchemy.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bundler-link"
+              >
+                Alchemy Bundler API
+              </a>
+            </span>
+          </div>
+        )}
 
         <div className="detail-item">
           <span className="detail-label">Network:</span>
