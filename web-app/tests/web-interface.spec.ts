@@ -120,7 +120,7 @@ test.describe('ERC-4337 Rundler Web Interface', () => {
 
     // 检查页面仍然可访问
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6); // 6个主要组件
+    await expect(page.locator('h3')).toHaveCount(7); // 7个主要组件
 
     // 测试平板视口
     await page.setViewportSize({ width: 768, height: 1024 });
@@ -173,7 +173,7 @@ test.describe('ERC-4337 Rundler Web Interface', () => {
 
     // 等待主要内容加载
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6);
+    await expect(page.locator('h3')).toHaveCount(7);
 
     const loadTime = Date.now() - startTime;
     console.log(`页面加载时间: ${loadTime}ms`);

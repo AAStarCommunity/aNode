@@ -40,8 +40,9 @@ test.describe('完整界面功能测试', () => {
   });
 
   test('所有主要组件存在验证', async ({ page }) => {
-    // 验证6个主要组件的标题
+    // 验证7个主要组件的标题
     const componentTitles = [
+      '🌐 Bundler 选择',
       '📋 Environment Configuration',
       '🏗️ Account Deployer',
       '🔧 Bundler Status',
@@ -130,17 +131,17 @@ test.describe('完整界面功能测试', () => {
     // 桌面视图验证
     await page.setViewportSize({ width: 1200, height: 800 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6);
+    await expect(page.locator('h3')).toHaveCount(7);
 
     // 平板视图验证
     await page.setViewportSize({ width: 768, height: 1024 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6);
+    await expect(page.locator('h3')).toHaveCount(7);
 
     // 手机视图验证
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6);
+    await expect(page.locator('h3')).toHaveCount(7);
   });
 
   test('页面性能测试', async ({ page }) => {
@@ -150,7 +151,7 @@ test.describe('完整界面功能测试', () => {
 
     // 验证所有主要元素加载
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(6);
+    await expect(page.locator('h3')).toHaveCount(7);
     await expect(page.locator('select')).toBeVisible();
 
     const loadTime = Date.now() - startTime;
@@ -158,6 +159,41 @@ test.describe('完整界面功能测试', () => {
 
     // 页面应该在3秒内加载完成
     expect(loadTime).toBeLessThan(6000);
+  });
+
+  test('Bundler选择器功能验证', async ({ page }) => {
+    // 验证 Bundler 选择器存在
+    await expect(page.locator('h3:has-text("🌐 Bundler 选择")')).toBeVisible();
+
+    // 验证默认选择 Rundler
+    const rundlerOption = page.locator('.bundler-option').first();
+    await expect(rundlerOption).toHaveClass(/selected/);
+    await expect(rundlerOption.locator('.bundler-name')).toContainText('SuperRelay Rundler');
+
+    // 验证 EntryPoint 选择器存在
+    await expect(page.locator('h4:has-text("🔗 EntryPoint 版本")')).toBeVisible();
+
+    // 验证默认 EntryPoint v0.6
+    const entryPointOption = page.locator('.entrypoint-option').first();
+    await expect(entryPointOption).toHaveClass(/selected/);
+    await expect(entryPointOption.locator('.entrypoint-name')).toContainText('EntryPoint v0.6');
+
+    // 测试切换到 Alchemy Bundler
+    const alchemyOption = page.locator('.bundler-option').nth(1);
+    await alchemyOption.click();
+    await expect(alchemyOption).toHaveClass(/selected/);
+    await expect(alchemyOption.locator('.bundler-name')).toContainText('Alchemy Bundler');
+
+    // 验证 EntryPoint v0.7 选项在 Alchemy 下可用
+    const entryPointV07 = page.locator('.entrypoint-option').nth(1);
+    await expect(entryPointV07.locator('.entrypoint-name')).toContainText('EntryPoint v0.7');
+    await entryPointV07.click();
+    await expect(entryPointV07).toHaveClass(/selected/);
+
+    // 切换回 Rundler 应该自动回到 v0.6
+    await rundlerOption.click();
+    await expect(rundlerOption).toHaveClass(/selected/);
+    await expect(entryPointOption).toHaveClass(/selected/);
   });
 
   test('用户交互流程测试', async ({ page }) => {
