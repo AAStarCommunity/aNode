@@ -1,5 +1,13 @@
-# aPaymaster
-aPaymaster is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor.
+# aNode
+aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
+
+- ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
+- ERC-20 PNTs and Community customized ERC-20 gas token support
+- Self-running paymaster support with SuperPaymaster relay and contract(if you want publish your ERC-20 gas token)
+- Entrypoint V06 support
+- Entrypoint V07, V08 is working on (inlude EIP-7704, EOA delegation)
+
+Just send me useroperation!
 
 ## On chain contract
 We use pimlico singliton paymaster contract as initial version, thanks for their love and contribution.
