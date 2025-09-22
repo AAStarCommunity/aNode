@@ -1,5 +1,32 @@
 # Changes
 
+## Version 1.0.0-web (2025-09-22)
+
+- 🎉 **重大更新**: 添加完整的 ERC-4337 Web 测试界面 `web-app/`
+- 🔐 **双重签名支持**: MetaMask 钱包集成 + 私钥开发模式
+- 📊 **实时监控**: Bundler 状态监控和连接检测
+- ⛽ **Gas 工具**: 完整的 Gas 费用计算器和预估工具
+- 🏗️ **UserOperation**: 自动构建和发送 ERC-4337 交易
+- 👛 **账户管理**: EOA, SimpleAccount A/B 地址管理
+- 🌐 **多网络**: 支持 Sepolia, OP Sepolia, OP Mainnet 切换
+- 🧪 **测试完整**: 25/25 Playwright E2E 测试通过
+- 🚀 **生产就绪**: Vercel 部署配置和环境变量管理
+- 📱 **响应式**: 支持桌面、平板、手机多端适配
+
+**技术栈**:
+- React 18 + TypeScript + Vite
+- ethers.js v6 (Account Abstraction)
+- Playwright E2E 测试框架
+- pnpm 包管理器
+
+**部署方式**:
+- 本地开发: `pnpm dev`
+- 测试运行: `pnpm test`
+- 生产部署: Vercel 自动部署
+
+**Git 标签**: `v1.0.0-web`
+**仓库名称**: 已更新为 aNode (https://github.com/AAStarCommunity/aNode)
+
 ## Version 0.1.8
 
 - Created comprehensive env.example configuration template
