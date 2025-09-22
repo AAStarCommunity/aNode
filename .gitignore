@@ -24,3 +24,6 @@ coverage/
 target/
 Cargo.lock
 **/*.rs.bk
+
+# scripts-flow node_modules
+scripts-flow/node_modules/
