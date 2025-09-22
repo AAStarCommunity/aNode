@@ -14,6 +14,9 @@ importers:
       '@account-kit/infra':
         specifier: ^4.64.0
         version: 4.64.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@account-kit/smart-contracts':
+        specifier: ^4.64.0
+        version: 4.64.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
       alchemy-sdk:
         specifier: ^3.6.3
         version: 3.6.3(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)
@@ -32,6 +35,9 @@ importers:
       styled-jsx:
         specifier: ^5.1.7
         version: 5.1.7(@babel/core@7.28.4)(react@19.1.1)
+      viem:
+        specifier: ^2.37.7
+        version: 2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
     devDependencies:
       '@eslint/js':
         specifier: ^9.35.0
@@ -84,6 +90,11 @@ packages:
 
   '@account-kit/logging@4.64.0':
     resolution: {integrity: sha512-8Wnqe0PudvicQUcqxeSbYxDBT7HchrEtbgoF72XgmE/FX5yozmvQgQSwgU1+QmfhzNmOT9sqv2X2QCtxweQNsw==}
+
+  '@account-kit/smart-contracts@4.64.0':
+    resolution: {integrity: sha512-o5cpoNH/+uLmAEoMP7htFod27YCJ9Gx0TaN4r/epB2b8CZkbpjeUKT/KpQU5jWtxMMejNWWKyX4g/zGoHZofyQ==}
+    peerDependencies:
+      viem: ^2.29.2
 
   '@adraffy/ens-normalize@1.10.1':
     resolution: {integrity: sha512-96Z2IP3mYmF1Xg2cDm8f1gWGf/HUVedQ3FMifV4kG/PQ4yEP51xDtRAEfhVNt5f/uzpNkZHwWQuUcu6D6K+Ekw==}
@@ -1757,6 +1768,9 @@ packages:
       yaml:
         optional: true
 
+  webauthn-p256@0.0.10:
+    resolution: {integrity: sha512-EeYD+gmIT80YkSIDb2iWq0lq2zbHo1CxHlQTeJ+KkCILWpVy3zASH3ByD4bopzfk0uCwXxLqKGLqp2W4O28VFA==}
+
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -1873,6 +1887,20 @@ snapshots:
       uuid: 11.1.0
     transitivePeerDependencies:
       - encoding
+
+  '@account-kit/smart-contracts@4.64.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@aa-sdk/core': 4.64.0(typescript@5.8.3)(viem@2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@account-kit/infra': 4.64.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76))
+      viem: 2.37.7(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
+      webauthn-p256: 0.0.10
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - encoding
+      - supports-color
+      - typescript
+      - utf-8-validate
 
   '@adraffy/ens-normalize@1.10.1': {}
 
@@ -3541,7 +3569,7 @@ snapshots:
       buffer: 6.0.3
       eventemitter3: 5.0.1
       uuid: 8.3.2
-      ws: 8.17.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@5.0.10)
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 5.0.10
@@ -3686,6 +3714,11 @@ snapshots:
       tinyglobby: 0.2.15
     optionalDependencies:
       fsevents: 2.3.3
+
+  webauthn-p256@0.0.10:
+    dependencies:
+      '@noble/curves': 1.9.7
+      '@noble/hashes': 1.8.0
 
   webidl-conversions@3.0.1: {}
 

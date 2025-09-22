@@ -1,4 +1,9 @@
 import { Alchemy, Network, AlchemySettings } from 'alchemy-sdk';
+import { createAlchemyPublicRpcClient, alchemy, sepolia, optimism, optimismSepolia } from '@account-kit/infra';
+import { createModularAccountV2Client } from '@account-kit/smart-contracts';
+import { LocalAccountSigner } from '@aa-sdk/core';
+import { entryPoint07Address } from 'viem/account-abstraction';
+import type { Hash, Chain, Transport } from 'viem';
 
 export interface UserOperation {
   sender: string;
@@ -44,6 +49,10 @@ export class AlchemyBundlerService {
   private alchemy: Alchemy;
   private entryPointVersion: string;
   private entryPointAddress: string;
+  private apiKey: string;
+  private network: Network;
+  private chain: Chain;
+  private transport: Transport;
 
   // EntryPoint addresses for different versions
   private static readonly ENTRY_POINTS = {
@@ -62,14 +71,36 @@ export class AlchemyBundlerService {
     };
 
     this.alchemy = new Alchemy(settings);
+    this.apiKey = apiKey;
+    this.network = network;
     this.entryPointVersion = entryPointVersion;
     this.entryPointAddress = AlchemyBundlerService.ENTRY_POINTS[entryPointVersion];
+
+    // Initialize Account Kit chain and transport
+    this.chain = this.getChainFromNetwork(network);
+    this.transport = alchemy({ apiKey });
 
     console.log(`✅ Alchemy Bundler 初始化完成:`, {
       network: network,
       entryPointVersion: entryPointVersion,
       entryPointAddress: this.entryPointAddress
     });
+  }
+
+  /**
+   * 将 Alchemy Network 转换为 Account Kit Chain
+   */
+  private getChainFromNetwork(network: Network): Chain {
+    switch (network) {
+      case Network.ETH_SEPOLIA:
+        return sepolia;
+      case Network.OPT_SEPOLIA:
+        return optimismSepolia;
+      case Network.OPT_MAINNET:
+        return optimism;
+      default:
+        return sepolia;
+    }
   }
 
   /**
@@ -271,5 +302,118 @@ export class AlchemyBundlerService {
       network: this.alchemy.config.network,
       apiKey: this.alchemy.config.apiKey ? '***' : undefined
     };
+  }
+
+  /**
+   * 使用 Account Kit 执行代币转账 (新增方法)
+   */
+  async executeTokenTransferWithAccountKit(
+    privateKey: string,
+    toAddress: string,
+    tokenAddress: string,
+    amount: string
+  ): Promise<{ hash: string; receipt: any }> {
+    console.log('🚀 使用 Account Kit 执行转账:', {
+      toAddress,
+      tokenAddress,
+      amount,
+      entryPointVersion: this.entryPointVersion
+    });
+
+    try {
+      // 创建 ModularAccount 客户端
+      const client = await createModularAccountV2Client({
+        signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey as `0x${string}`),
+        chain: this.chain,
+        transport: this.transport,
+      });
+
+      console.log('✅ Account Kit 客户端创建成功');
+
+      // 构建 ERC20 转账的调用数据
+      const transferCallData = `0xa9059cbb${toAddress.slice(2).padStart(64, '0')}${BigInt(amount).toString(16).padStart(64, '0')}`;
+
+      // 构建 UserOperation
+      let uo = await client.buildUserOperation({
+        uo: {
+          data: transferCallData,
+          target: tokenAddress as `0x${string}`,
+        },
+      });
+
+      console.log('✅ UserOperation 构建完成:', uo);
+
+      // 签名 UserOperation
+      const uoWithSig = await client.signUserOperation({ uoStruct: uo });
+      console.log('✅ UserOperation 签名完成');
+
+      // 发送 UserOperation
+      const sendResult = await client.sendRawUserOperation(
+        uoWithSig,
+        this.entryPointVersion === '0.7' ? entryPoint07Address : this.entryPointAddress as `0x${string}`
+      );
+
+      console.log('✅ UserOperation 已发送:', sendResult);
+
+      // 等待交易确认
+      await client.waitForUserOperationTransaction({
+        hash: sendResult,
+        retries: {
+          intervalMs: 1000,
+          maxRetries: 60,
+          multiplier: 1.1,
+        },
+      });
+
+      // 获取收据
+      const receipt = await client.getUserOperationReceipt(sendResult);
+      console.log('✅ 交易确认，收据:', receipt);
+
+      return {
+        hash: sendResult,
+        receipt
+      };
+
+    } catch (error) {
+      console.error('❌ Account Kit 转账失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 使用 Account Kit Public RPC 客户端获取 UserOperation
+   */
+  async getUserOperationByHashWithAccountKit(uoHash: Hash): Promise<any> {
+    try {
+      const client = createAlchemyPublicRpcClient({
+        chain: this.chain,
+        transport: this.transport,
+      });
+
+      const userOp = await client.getUserOperationByHash(uoHash);
+      console.log('Account Kit - User Operation:', userOp);
+      return userOp;
+    } catch (error) {
+      console.error('Account Kit - 获取 UserOperation 失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取账户地址（基于 Account Kit）
+   */
+  async getAccountAddress(privateKey: string): Promise<string> {
+    try {
+      const client = await createModularAccountV2Client({
+        signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey as `0x${string}`),
+        chain: this.chain,
+        transport: this.transport,
+      });
+
+      return client.account.address;
+    } catch (error) {
+      console.error('获取 Account Kit 账户地址失败:', error);
+      throw error;
+    }
   }
 }

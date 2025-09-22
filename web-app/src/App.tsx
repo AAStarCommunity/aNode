@@ -198,7 +198,9 @@ function App() {
         <section className="status-section">
           <BundlerStatus
             bundlerService={bundlerService}
+            alchemyBundlerService={alchemyBundlerService}
             networkConfig={NETWORKS[selectedNetwork]}
+            selectedBundlerType={selectedBundler.type}
           />
         </section>
 
@@ -251,8 +253,10 @@ function App() {
           <TransferTest
             accountService={accountService}
             bundlerService={bundlerService}
+            alchemyBundlerService={alchemyBundlerService}
             networkConfig={NETWORKS[selectedNetwork]}
             signer={signer}
+            selectedBundlerType={selectedBundler.type}
           />
         </section>
       </main>
