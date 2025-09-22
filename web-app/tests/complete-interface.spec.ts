@@ -43,6 +43,7 @@ test.describe('完整界面功能测试', () => {
     // 验证6个主要组件的标题
     const componentTitles = [
       '📋 Environment Configuration',
+      '🏗️ Account Deployer',
       '🔧 Bundler Status',
       '⛽ Gas Price Calculator',
       '👛 Account Management',
@@ -129,17 +130,17 @@ test.describe('完整界面功能测试', () => {
     // 桌面视图验证
     await page.setViewportSize({ width: 1200, height: 800 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(5);
+    await expect(page.locator('h3')).toHaveCount(6);
 
     // 平板视图验证
     await page.setViewportSize({ width: 768, height: 1024 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(5);
+    await expect(page.locator('h3')).toHaveCount(6);
 
     // 手机视图验证
     await page.setViewportSize({ width: 375, height: 667 });
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(5);
+    await expect(page.locator('h3')).toHaveCount(6);
   });
 
   test('页面性能测试', async ({ page }) => {
@@ -149,7 +150,7 @@ test.describe('完整界面功能测试', () => {
 
     // 验证所有主要元素加载
     await expect(page.locator('h1')).toBeVisible();
-    await expect(page.locator('h3')).toHaveCount(5);
+    await expect(page.locator('h3')).toHaveCount(6);
     await expect(page.locator('select')).toBeVisible();
 
     const loadTime = Date.now() - startTime;

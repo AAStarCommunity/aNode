@@ -9,6 +9,7 @@ import AccountManager from './components/AccountManager';
 import TransferTest from './components/TransferTest';
 import EnvConfigDisplay from './components/EnvConfigDisplay';
 import MetaMaskWallet from './components/MetaMaskWallet';
+import AccountDeployer from './components/AccountDeployer';
 
 // Services
 import { BundlerService } from './services/bundlerService';
@@ -100,6 +101,15 @@ function App() {
         {/* 环境配置显示 */}
         <section className="config-section">
           <EnvConfigDisplay selectedNetwork={selectedNetwork} />
+        </section>
+
+        {/* 账户部署器 */}
+        <section className="deployer-section">
+          <AccountDeployer
+            selectedNetwork={selectedNetwork}
+            signer={signer}
+            privateKey={import.meta.env.VITE_PRIVATE_KEY}
+          />
         </section>
 
         {/* Bundler 状态 */}
