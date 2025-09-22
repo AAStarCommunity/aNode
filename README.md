@@ -9,6 +9,26 @@ aNode is a permissionless and public goods for community to support their own ER
 
 Just send me useroperation!
 
+## Phase design
+1. Phase 1: a off-chain **paymaster** signature node, working with on-chain contract.
+  - sign after verify the useroperation and sender account SBT and PNTs balance
+  - contract invoke by Entrypoint(validatePaymasterSignaure)
+  - contract set and change different public key on-chain contract by owner
+2. Phase 2: a passkey signature **validator**
+  - invoked by outer aNode to verify it is user's will, returen a aNode BLS signature aggregation
+  - if the BLS collection is enough, act as a sender, send to bundler RPC
+  - will be changed for PQC
+3. Phase 3: hardware dependent, **account manager** with TEE security guarantee
+  - support web interface for account life management(many details)
+  - support RPC API for KMS service
+4. Phase 4: **Guardian** as social recovery and deadman's switch and more security service
+  - join gourp weight for multi signature on creating AA account
+  - verify special useroperation for changing the private key, by social verifications, not onchain
+  - provide signature to confirm the special useroperation
+  - the last guardian will submit to bundler if signature is enough
+  - will change to Hash algorithm cause of Post Quantumn Computing
+
+
 ## On chain contract
 We use pimlico singliton paymaster contract as initial version, thanks for their love and contribution.
 It act as onchain deposit account to Entrypoint, and a manageable public key to verify off chain signature.
