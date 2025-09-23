@@ -391,6 +391,171 @@ wrangler deploy
 - 注意 Rust 生命周期管理
 - 性能优秀，适合生产环境使用
 
+## aNode Relay Server v0.01 部署记录
+
+### ✅ 部署成功结果
+
+**生产 URL**: https://anode-relay-server.jhfnetboy.workers.dev
+
+**测试响应**:
+```bash
+curl https://anode-relay-server.jhfnetboy.workers.dev/
+# 返回:
+🚀 aNode Relay Server v0.0.1 - Hello World!
+
+📊 Server Information:
+• Service: aNode Relay Server
+• Version: 0.0.1
+• Status: Running
+• Runtime: Cloudflare Workers
+• Language: Rust + WebAssembly
+• Framework: workers-rs v0.6
+
+📍 Request Details:
+• Method: GET
+• URL: https://anode-relay-server.jhfnetboy.workers.dev/
+• Timestamp: [当前时间戳]
+
+🎯 This is aNode Relay Server v0.01 - ERC-4337 Paymaster Service
+🔜 Future features: SBT validation, PNT balance checks, gas sponsorship
+
+⏰ Server Time: [时间戳]ms since Unix epoch
+```
+
+### 📋 aNode Relay Server 重新初始化步骤
+
+#### 步骤 1: 备份并清空原有项目
+
+```bash
+# 备份原有项目
+mv relay-server relay-server-backup
+
+# 创建新项目目录
+mkdir relay-server
+cd relay-server
+cargo init --lib
+```
+
+#### 步骤 2: 配置 Cargo.toml
+
+```toml
+[package]
+name = "anode-relay-server"
+version = "0.0.1"
+edition = "2021"
+authors = ["aNode Team"]
+description = "aNode Relay Server v0.01 - ERC-4337 Paymaster Service"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+worker = { version = "0.6" }
+worker-macros = { version = "0.6" }
+
+[profile.release]
+lto = true
+strip = true
+codegen-units = 1
+opt-level = "z"
+```
+
+#### 步骤 3: 配置 wrangler.toml
+
+```toml
+name = "anode-relay-server"
+main = "build/worker/shim.mjs"
+compatibility_date = "2025-01-18"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[vars]
+NODE_ENV = "production"
+SERVICE_NAME = "aNode Relay Server"
+VERSION = "0.0.1"
+```
+
+#### 步骤 4: 实现 Hello World 逻辑
+
+**src/lib.rs**:
+```rust
+use worker::*;
+
+#[event(fetch)]
+async fn fetch(
+    req: Request,
+    env: Env,
+    _ctx: Context,
+) -> Result<Response> {
+    let method = req.method();
+    let url = req.url()?.to_string();
+    let timestamp = js_sys::Date::now() as u64;
+
+    // 获取环境变量
+    let service_name = env.var("SERVICE_NAME")?.to_string();
+    let version = env.var("VERSION")?.to_string();
+
+    let response = format!(
+        "🚀 aNode Relay Server v{} - Hello World!\n\n📊 Server Information:\n• Service: {}\n• Version: {}\n• Status: Running\n• Runtime: Cloudflare Workers\n• Language: Rust + WebAssembly\n• Framework: workers-rs v0.6\n\n📍 Request Details:\n• Method: {}\n• URL: {}\n• Timestamp: {}\n\n🎯 This is aNode Relay Server v0.01 - ERC-4337 Paymaster Service\n🔜 Future features: SBT validation, PNT balance checks, gas sponsorship\n\n⏰ Server Time: {}ms since Unix epoch",
+        version,
+        service_name,
+        version,
+        method.as_ref(),
+        url,
+        timestamp,
+        timestamp
+    );
+
+    Response::ok(response)
+}
+```
+
+#### 步骤 5: 构建和部署
+
+```bash
+# 构建项目
+cargo build --release --target wasm32-unknown-unknown
+
+# 本地测试
+wrangler dev --port 8790
+
+# 部署到生产
+wrangler deploy
+```
+
+### 📊 性能指标
+
+- **构建时间**: ~2 分钟 (首次下载依赖)
+- **包大小**: 275.24 KiB (压缩后 114.73 KiB)
+- **启动时间**: 1ms (生产环境)
+- **响应时间**: < 50ms
+- **环境变量**: 3个 (NODE_ENV, SERVICE_NAME, VERSION)
+
+### 🎯 未来发展路线
+
+aNode Relay Server v0.01 是基础版本，后续将逐步添加：
+
+1. **v0.1.0**: 基础 ERC-4337 支持
+   - UserOperation 验证
+   - 基础 paymaster 逻辑
+
+2. **v0.2.0**: 安全功能
+   - SBT 验证机制
+   - PNT 余额检查
+   - 安全过滤器
+
+3. **v0.3.0**: 高级功能
+   - 多链支持
+   - 策略引擎
+   - 数据库集成
+
+4. **v1.0.0**: 完整 paymaster 服务
+   - 全功能 ERC-4337 实现
+   - 生产就绪架构
+
+---
+
 ## 总结
 
 Cloudflare Workers Rust 支持提供了强大的边缘计算能力：

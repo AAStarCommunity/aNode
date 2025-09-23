@@ -1,0 +1,11 @@
+name = "anode-relay-server"
+main = "build/worker/shim.mjs"
+compatibility_date = "2025-01-18"
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+[vars]
+NODE_ENV = "production"
+SERVICE_NAME = "aNode Relay Server"
+VERSION = "0.0.1"
