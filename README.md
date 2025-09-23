@@ -100,7 +100,7 @@ curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/proc
 | Worker Type | Status | URL | Notes |
 |-------------|--------|-----|-------|
 | **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
-| **Rust Worker** | ⚠️ **Compatibility Issue** | N/A | wrangler 4.x 与 worker crate 不兼容 |
+| **Rust Worker** | ✅ **Live** | https://anode-rust-demo.jhfnetboy.workers.dev | Hello World demo using official workers-rs template |
 
 **Rust Worker 兼容性说明**:
 - 当前 wrangler 版本: 4.38.0
