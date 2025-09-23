@@ -95,6 +95,19 @@ curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/proc
   -H "Content-Type: application/json"
 ```
 
+### Worker Status
+
+| Worker Type | Status | URL | Notes |
+|-------------|--------|-----|-------|
+| **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
+| **Rust Worker** | ⚠️ **Compatibility Issue** | N/A | wrangler 4.x 与 worker crate 不兼容 |
+
+**Rust Worker 兼容性说明**:
+- 当前 wrangler 版本: 4.38.0
+- Worker crate 兼容性: 需要 wrangler 2.x 或 3.x 早期版本
+- 建议解决方案: 使用 JavaScript Worker 或等待 Cloudflare 修复兼容性
+- 代码位置: `cloudflare-worker/` 和 `cloudflare-rust-simple/`
+
 ## Quick Start
 
 ```bash
