@@ -66,10 +66,11 @@ function App() {
       if (network.alchemy?.apiKey) {
         // 获取 Alchemy 网络枚举
         const alchemyNetwork = getAlchemyNetwork(network.alchemy.network);
+        // 暂时强制使用 v0.6 以确保兼容性
         const alchemy = new AlchemyBundlerService(
           network.alchemy.apiKey,
           alchemyNetwork,
-          selectedEntryPoint.version
+          '0.6'
         );
         setAlchemyBundlerService(alchemy);
         setBundlerService(null);

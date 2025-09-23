@@ -24,6 +24,7 @@
   "author": "SuperRelay Team",
   "license": "MIT",
   "dependencies": {
+    "alchemy-sdk": "^3.6.3",
     "dotenv": "^17.2.2",
     "ethers": "^5.7.2"
   },

@@ -78,13 +78,35 @@ export class AlchemyBundlerService {
 
     // Initialize Account Kit chain and transport
     this.chain = this.getChainFromNetwork(network);
-    this.transport = alchemy({ apiKey });
+
+    // Use alchemy transport with API key only (no direct URL to avoid exposure)
+    this.transport = alchemy({
+      apiKey: apiKey
+    });
 
     console.log(`✅ Alchemy Bundler 初始化完成:`, {
       network: network,
       entryPointVersion: entryPointVersion,
-      entryPointAddress: this.entryPointAddress
+      entryPointAddress: this.entryPointAddress,
+      apiKey: apiKey.substring(0, 8) + '...',
+      transport: 'Account Kit Alchemy Transport'
     });
+  }
+
+  /**
+   * 获取 Alchemy 网络字符串
+   */
+  private getAlchemyNetworkString(network: Network): string {
+    switch (network) {
+      case Network.ETH_SEPOLIA:
+        return 'eth-sepolia';
+      case Network.OPT_SEPOLIA:
+        return 'opt-sepolia';
+      case Network.OPT_MAINNET:
+        return 'opt-mainnet';
+      default:
+        return 'eth-sepolia';
+    }
   }
 
   /**
@@ -107,18 +129,9 @@ export class AlchemyBundlerService {
    * 获取支持的 EntryPoint 地址列表
    */
   async getSupportedEntryPoints(): Promise<string[]> {
-    try {
-      const response = await this.alchemy.core.send(
-        'eth_supportedEntryPoints',
-        []
-      );
-      console.log('📋 支持的 EntryPoints:', response);
-      return response;
-    } catch (error) {
-      console.error('❌ 获取支持的 EntryPoints 失败:', error);
-      // 返回默认值
-      return [this.entryPointAddress];
-    }
+    // Alchemy 不支持 eth_supportedEntryPoints API，直接返回配置的 EntryPoints
+    console.log('📋 Alchemy 支持的 EntryPoints (配置值):', [this.entryPointAddress]);
+    return [this.entryPointAddress];
   }
 
   /**
@@ -252,11 +265,12 @@ export class AlchemyBundlerService {
     try {
       console.log('🔧 检查 Alchemy Bundler 状态');
 
-      const supportedEntryPoints = await this.getSupportedEntryPoints();
+      // 测试基本连通性，使用标准的 eth_chainId 调用
+      await this.alchemy.core.send('eth_chainId', []);
 
       return {
         isHealthy: true,
-        supportedEntryPoints,
+        supportedEntryPoints: [this.entryPointAddress],
         network: this.alchemy.config.network || 'unknown',
         version: this.entryPointVersion
       };
@@ -305,59 +319,57 @@ export class AlchemyBundlerService {
   }
 
   /**
-   * 使用 Account Kit 执行代币转账 (新增方法)
+   * 使用 Account Kit 执行代币转账 (正确的 ModularAccount 实现)
    */
   async executeTokenTransferWithAccountKit(
     privateKey: string,
     toAddress: string,
     tokenAddress: string,
-    amount: string
+    amount: string,
+    policyId?: string  // 可选的 Gas 赞助 policy
   ): Promise<{ hash: string; receipt: any }> {
-    console.log('🚀 使用 Account Kit 执行转账:', {
+    console.log('🚀 使用 Account Kit 执行转账 (ModularAccount):', {
       toAddress,
       tokenAddress,
       amount,
-      entryPointVersion: this.entryPointVersion
+      entryPointVersion: this.entryPointVersion,
+      policyId: policyId || 'none'
     });
 
     try {
-      // 创建 ModularAccount 客户端
-      const client = await createModularAccountV2Client({
+      // 创建 ModularAccountV2 客户端 - 按照示例的正确方式
+      const clientConfig: any = {
         signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey as `0x${string}`),
         chain: this.chain,
         transport: this.transport,
-      });
+      };
 
-      console.log('✅ Account Kit 客户端创建成功');
+      // 如果有 policyId，添加 Gas 赞助支持
+      if (policyId) {
+        clientConfig.policyId = policyId;
+        console.log('💰 启用 Gas 赞助，Policy ID:', policyId);
+      }
 
-      // 构建 ERC20 转账的调用数据
-      const transferCallData = `0xa9059cbb${toAddress.slice(2).padStart(64, '0')}${BigInt(amount).toString(16).padStart(64, '0')}`;
+      const client = await createModularAccountV2Client(clientConfig);
 
-      // 构建 UserOperation
-      let uo = await client.buildUserOperation({
+      console.log('✅ ModularAccount 客户端创建成功');
+      console.log('📍 ModularAccount 地址:', client.account.address);
+
+      // 构建转账 UserOperation - 使用 Account Kit 的标准方式
+      const { hash } = await client.sendUserOperation({
         uo: {
-          data: transferCallData,
           target: tokenAddress as `0x${string}`,
+          data: `0xa9059cbb${toAddress.slice(2).padStart(64, '0')}${BigInt(amount).toString(16).padStart(64, '0')}`,
+          value: 0n,
         },
       });
 
-      console.log('✅ UserOperation 构建完成:', uo);
-
-      // 签名 UserOperation
-      const uoWithSig = await client.signUserOperation({ uoStruct: uo });
-      console.log('✅ UserOperation 签名完成');
-
-      // 发送 UserOperation
-      const sendResult = await client.sendRawUserOperation(
-        uoWithSig,
-        this.entryPointVersion === '0.7' ? entryPoint07Address : this.entryPointAddress as `0x${string}`
-      );
-
-      console.log('✅ UserOperation 已发送:', sendResult);
+      console.log('✅ UserOperation 已发送，Hash:', hash);
 
       // 等待交易确认
-      await client.waitForUserOperationTransaction({
-        hash: sendResult,
+      console.log('⏳ 等待交易确认...');
+      const txHash = await client.waitForUserOperationTransaction({
+        hash: hash,
         retries: {
           intervalMs: 1000,
           maxRetries: 60,
@@ -365,18 +377,81 @@ export class AlchemyBundlerService {
         },
       });
 
+      console.log('✅ 交易确认，Tx Hash:', txHash);
+
       // 获取收据
-      const receipt = await client.getUserOperationReceipt(sendResult);
-      console.log('✅ 交易确认，收据:', receipt);
+      const receipt = await client.getUserOperationReceipt(hash);
+      console.log('📄 UserOperation 收据:', receipt);
 
       return {
-        hash: sendResult,
-        receipt
+        hash: hash,
+        receipt: receipt
       };
 
     } catch (error) {
       console.error('❌ Account Kit 转账失败:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 获取 ModularAccount 地址 (不创建实际账户)
+   */
+  async getModularAccountAddress(privateKey: string): Promise<string> {
+    try {
+      const client = await createModularAccountV2Client({
+        signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey as `0x${string}`),
+        chain: this.chain,
+        transport: this.transport,
+      });
+
+      console.log('📍 ModularAccount 地址:', client.account.address);
+      return client.account.address;
+    } catch (error) {
+      console.error('❌ 获取 ModularAccount 地址失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 模拟 UserOperation 资产变化 (使用 Alchemy 特有的 API)
+   */
+  async simulateUserOperationAssetChanges(
+    userOp: any,
+    entryPoint?: string,
+    blockTag?: string
+  ): Promise<any> {
+    try {
+      const entryPointAddr = entryPoint || this.entryPointAddress;
+      const blockTagValue = blockTag || 'latest';
+
+      console.log('🔮 模拟 UserOperation 资产变化...');
+
+      const response = await this.alchemy.core.send(
+        'alchemy_simulateUserOperationAssetChanges',
+        [userOp, entryPointAddr, blockTagValue]
+      );
+
+      console.log('✅ 资产变化模拟结果:', response);
+      return response;
+    } catch (error) {
+      console.error('❌ 资产变化模拟失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 检查 ModularAccount 是否已部署
+   */
+  async isModularAccountDeployed(accountAddress: string): Promise<boolean> {
+    try {
+      const code = await this.alchemy.core.getCode(accountAddress);
+      const isDeployed = code !== '0x';
+      console.log(`🔍 ModularAccount ${accountAddress} 部署状态:`, isDeployed);
+      return isDeployed;
+    } catch (error) {
+      console.error('❌ 检查账户部署状态失败:', error);
+      return false;
     }
   }
 
@@ -399,21 +474,4 @@ export class AlchemyBundlerService {
     }
   }
 
-  /**
-   * 获取账户地址（基于 Account Kit）
-   */
-  async getAccountAddress(privateKey: string): Promise<string> {
-    try {
-      const client = await createModularAccountV2Client({
-        signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey as `0x${string}`),
-        chain: this.chain,
-        transport: this.transport,
-      });
-
-      return client.account.address;
-    } catch (error) {
-      console.error('获取 Account Kit 账户地址失败:', error);
-      throw error;
-    }
-  }
 }
