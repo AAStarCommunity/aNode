@@ -42,6 +42,63 @@ We reference the Nodejs paymaster from ZeroDev, thanks for their contribution.
 It act as a off chain signer(can rotate) after verifying their pre-setting rules(like only support specific contract, specific ERC-20 and more).
 
 ## Register on SuperPaymaster to run
-This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this). 
+This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this).
+
+## Documentation Structure
+
+aNode maintains comprehensive documentation in the `docs/` directory:
+
+### Core Architecture Documents
+- **[aNodeFrameworkAndPaymasterModuleDesign.md](docs/aNodeFrameworkAndPaymasterModuleDesign.md)** - Unified framework and paymaster module design, including ERC-4337 integration, modular architecture, and API interfaces
+- **[aNodeRoadmap.md](docs/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
+- **[aNodeArchitectureDesign.md](docs/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
+
+### Technical Implementation Documents
+- **[aNodeAPIDesign.md](docs/aNodeAPIDesign.md)** - Multi-protocol API design (RESTful + JSON-RPC) with comprehensive endpoint specifications
+- **[aNodePolicySystem.md](docs/aNodePolicySystem.md)** - Policy management system based on ZeroDev patterns with advanced rate limiting and rule engines
+- **[SigningAndKeyManagement.md](docs/SigningAndKeyManagement.md)** - Pluggable signing mechanisms supporting Local, AWS KMS, Cloudflare Secrets, and Keyless SSL
+- **[ERC4337FlowDiagram.md](docs/ERC4337FlowDiagram.md)** - Complete ERC-4337 flow integration with aNode enhancements
+- **[ModuleDesign.md](docs/ModuleDesign.md)** - Detailed module architecture with internal call sequence diagrams
+
+### Development and Deployment Documents
+- **[ALCHEMY_ACCOUNT_KIT_LEARNING.md](docs/ALCHEMY_ACCOUNT_KIT_LEARNING.md)** - Alchemy Account Kit integration learning and examples
+- **[DEPLOY.md](docs/DEPLOY.md)** - Web application deployment guide
+- **[TEST_REPORT.md](docs/TEST_REPORT.md)** - Testing reports and Playwright test results
+- **[DetailedSystemDesign.md](docs/DetailedSystemDesign.md)** - Detailed system design specifications
+- **[PaymasterServerDesign.md](docs/PaymasterServerDesign.md)** - Legacy paymaster server design (superseded by unified framework)
+- **[RustPaymasterServerDesign.md](docs/RustPaymasterServerDesign.md)** - Legacy Rust implementation design (superseded by unified framework)
+
+### Development Guides
+- **[ERC4337-AB-Test-Guide.md](docs/ERC4337-AB-Test-Guide.md)** - ERC-4337 Account Abstraction testing guide
+- **[setup-guide.md](docs/setup-guide.md)** - Development environment setup guide
+- **[README-test-accounts.md](docs/README-test-accounts.md)** - Test accounts and configuration guide
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/AAStarCommunity/aNode.git
+cd aNode
+
+# Install dependencies for web app
+cd web-app && pnpm install
+
+# Start development server
+pnpm run dev
+
+# For Rust paymaster server (future)
+cd ../relay-server && cargo build
+```
+
+## Contributing
+
+1. Read the [aNode Roadmap](docs/aNodeRoadmap.md) to understand the project vision
+2. Review [Module Design](docs/ModuleDesign.md) for architecture guidelines
+3. Follow the [API Design](docs/aNodeAPIDesign.md) for interface specifications
+4. Check [Policy System](docs/aNodePolicySystem.md) for configuration patterns
+
+## License
+
+This project is licensed under the MIT License. 
 
 
