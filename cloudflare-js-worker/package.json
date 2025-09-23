@@ -1,0 +1,13 @@
+{
+  "name": "anode-js-worker",
+  "version": "0.1.0",
+  "description": "aNode JavaScript Cloudflare Worker - ERC-4337 Paymaster Service",
+  "main": "src/index.js",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test": "node test.js"
+  },
+  "keywords": ["cloudflare", "worker", "erc4337", "paymaster"],
+  "author": "aNode Team"
+}

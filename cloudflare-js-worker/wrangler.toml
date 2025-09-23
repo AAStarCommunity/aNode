@@ -1,0 +1,13 @@
+name = "anode-js-worker"
+main = "src/index.js"
+compatibility_date = "2025-01-18"
+
+# Environment variables
+[vars]
+NODE_ENV = "production"
+SERVICE_NAME = "aNode Paymaster Worker (JS)"
+
+# Optional: Add KV namespace for caching (future use)
+# [[kv_namespaces]]
+# binding = "ANODE_CACHE"
+# id = "your-kv-namespace-id"

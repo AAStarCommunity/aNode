@@ -1,0 +1,22 @@
+name = "anode-paymaster-worker"
+main = "build/worker/shim.mjs"
+compatibility_date = "2025-01-18"
+workers_dev = true
+
+[build]
+command = "cargo install -q worker-build && worker-build --release"
+
+# Environment variables
+[vars]
+NODE_ENV = "production"
+SERVICE_NAME = "aNode Paymaster Worker"
+
+# Optional: Add KV namespace for caching (if needed in future)
+# [[kv_namespaces]]
+# binding = "ANODE_CACHE"
+# id = "your-kv-namespace-id"
+
+# Optional: Add secrets for production
+# [[secrets]]
+# binding = "PAYMASTER_PRIVATE_KEY"
+# secret_name = "anode_paymaster_key"
