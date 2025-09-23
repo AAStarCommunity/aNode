@@ -1,5 +1,24 @@
 # Changes
 
+## Version 1.0.1-web (2025-09-22)
+
+### 🔧 Alchemy Bundler 关键修复
+- **修复 "execution reverted" 错误**: 解决了 Account Kit transport 配置问题，确保 API key 正确传递到 Alchemy RPC 请求
+- **强制 EntryPoint v0.6**: 避免使用不稳定的 v0.7，确保与 Alchemy 服务的完整兼容性
+- **API key 安全优化**: 添加非 VITE_ 环境变量和 Vercel API 代理，防止密钥暴露到前端
+- **ZodError 修复**: 移除 transport 配置中的 `rpcUrl` 参数，只保留 `apiKey` 避免验证错误
+
+### 🛠️ 技术改进
+- 优化 `AlchemyBundlerService.executeTokenTransferWithAccountKit` 方法
+- 改进 Account Kit ModularAccountV2Client 配置
+- 增强错误处理和调试日志
+- 创建 `/api/alchemy-proxy.js` 生产环境代理
+
+### 📝 修复的问题
+- URL 显示不完整 (`https://eth-sepolia.g.alchemy.com/v2`) 的问题
+- Transfer 按钮在选择 Alchemy bundler 时无响应
+- 免费 API key 不支持 ERC-4337 的限制
+
 ## Version 1.0.0-web (2025-09-22)
 
 - 🎉 **重大更新**: 添加完整的 ERC-4337 Web 测试界面 `web-app/`

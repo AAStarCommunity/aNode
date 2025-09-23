@@ -41,12 +41,21 @@ const BundlerStatus: React.FC<BundlerStatusProps> = ({
     try {
       let status;
       if (selectedBundlerType === 'alchemy' && alchemyBundlerService) {
-        // For Alchemy, create a simple status check
-        status = {
-          isOnline: true,
-          supportedEntryPoints: ['0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789', '0x0000000071727De22E5E9d8BAf0edAc6f37da032'],
-          version: 'Alchemy SDK'
-        };
+        // For Alchemy, test with a simple chain ID call to verify connectivity
+        try {
+          const chainId = await alchemyBundlerService.alchemy.core.send('eth_chainId', []);
+          console.log('✅ Alchemy API 连通性测试成功, Chain ID:', chainId);
+          status = {
+            isOnline: true,
+            supportedEntryPoints: [
+              alchemyBundlerService.getEntryPointAddress()
+            ],
+            version: `Alchemy SDK v${alchemyBundlerService.getEntryPointVersion()}`
+          };
+        } catch (apiError) {
+          console.error('❌ Alchemy API 连通性测试失败:', apiError);
+          throw new Error(`Alchemy API 连接失败: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`);
+        }
       } else if (bundlerService) {
         status = await bundlerService.checkBundlerStatus();
       } else {
