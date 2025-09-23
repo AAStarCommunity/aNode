@@ -10,3 +10,18 @@
 [submodule "vendor/smart-account-frame-template"]
 	path = vendor/smart-account-frame-template
 	url = https://github.com/pimlicolabs/smart-account-frame-template
+[submodule "vendor/zerodev-examples"]
+	path = vendor/zerodev-examples
+	url = https://github.com/zerodevapp/zerodev-examples.git
+[submodule "vendor/docs"]
+	path = vendor/docs
+	url = https://github.com/zerodevapp/docs.git
+[submodule "vendor/sdk"]
+	path = vendor/sdk
+	url = https://github.com/zerodevapp/sdk.git
+[submodule "vendor/7702-examples"]
+	path = vendor/7702-examples
+	url = https://github.com/zerodevapp/7702-examples.git
+[submodule "vendor/bastion"]
+	path = vendor/bastion
+	url = https://github.com/zerodevapp/bastion.git
