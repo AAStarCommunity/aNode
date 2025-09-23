@@ -107,7 +107,7 @@ const TransferTest: React.FC<TransferTestProps> = ({
 
   // 执行转账测试
   const executeTransfer = async () => {
-    if (!accountService || !bundlerService) return;
+    if (!accountService || (!bundlerService && !alchemyBundlerService)) return;
 
 
     // 清理调试日志并开始记录
@@ -174,25 +174,70 @@ const TransferTest: React.FC<TransferTestProps> = ({
         DebugLogger.log('✅ 使用环境变量私钥进行签名（仅限开发环境）');
       }
 
-      const result = await accountService.executeTransfer({
-        from: addresses.accountA,
-        to: addresses.accountB,
-        amount: transferState.amount,
-        tokenAddress: addresses.pntToken,
-        privateKey: import.meta.env.VITE_PRIVATE_KEY, // 从环境变量获取私钥
-        signer: signer || undefined, // 传递 MetaMask signer
-      });
+      let result: TransferResult;
+      let receipt: any = null;
 
-      if (!result.success) {
-        DebugLogger.error(`❌ 转账失败: ${result.error || 'Unknown error'}`);
-        throw new Error(result.error || 'Transfer failed');
+      if (selectedBundlerType === 'alchemy' && alchemyBundlerService) {
+        DebugLogger.log('🌟 使用 Alchemy bundler + Account Kit 执行转账');
+        DebugLogger.log(`📌 EntryPoint 版本: v${alchemyBundlerService.getEntryPointVersion()}`);
+        DebugLogger.log(`📌 EntryPoint 地址: ${alchemyBundlerService.getEntryPointAddress()}`);
+
+        // 使用正确的 Account Kit 方法执行转账
+        const privateKeyValue = import.meta.env.VITE_PRIVATE_KEY;
+        if (!privateKeyValue) {
+          throw new Error('需要私钥来使用 Alchemy bundler');
+        }
+
+        DebugLogger.log('🏗️  使用 Account Kit ModularAccount 系统');
+
+        // 先获取 ModularAccount 地址
+        const modularAccountAddress = await alchemyBundlerService.getModularAccountAddress(privateKeyValue);
+        DebugLogger.log(`📍 ModularAccount 地址: ${modularAccountAddress}`);
+
+        // 检查账户是否已部署
+        const isDeployed = await alchemyBundlerService.isModularAccountDeployed(modularAccountAddress);
+        DebugLogger.log(`🏗️  账户部署状态: ${isDeployed ? '已部署' : '未部署'}`);
+
+        // 执行转账
+        const transferResult = await alchemyBundlerService.executeTokenTransferWithAccountKit(
+          privateKeyValue,
+          addresses.accountB,  // 目标地址
+          addresses.pntToken,  // 代币合约
+          ethers.parseUnits(transferState.amount, 18).toString()
+        );
+
+        DebugLogger.log(`✅ Alchemy 转账成功! UserOp Hash: ${transferResult.hash}`);
+
+        result = {
+          success: true,
+          userOpHash: transferResult.hash,
+          receipt: transferResult.receipt
+        };
+
+        receipt = transferResult.receipt;
+      } else {
+        DebugLogger.log('🌟 使用 Rundler bundler 执行转账');
+
+        result = await accountService.executeTransfer({
+          from: addresses.accountA,
+          to: addresses.accountB,
+          amount: transferState.amount,
+          tokenAddress: addresses.pntToken,
+          privateKey: import.meta.env.VITE_PRIVATE_KEY, // 从环境变量获取私钥
+          signer: signer || undefined, // 传递 MetaMask signer
+        });
+
+        if (!result.success) {
+          DebugLogger.error(`❌ 转账失败: ${result.error || 'Unknown error'}`);
+          throw new Error(result.error || 'Transfer failed');
+        }
+
+        DebugLogger.log(`✅ 转账成功! UserOp Hash: ${result.userOpHash}`);
+
+        // 获取详细收据
+        DebugLogger.log('📋 获取交易收据...');
+        receipt = await bundlerService?.getUserOperationReceipt(result.userOpHash);
       }
-
-      DebugLogger.log(`✅ 转账成功! UserOp Hash: ${result.userOpHash}`);
-
-      // 获取详细收据
-      DebugLogger.log('📋 获取交易收据...');
-      const receipt = await bundlerService.getUserOperationReceipt(result.userOpHash);
 
       // 获取最终余额
       DebugLogger.log('📊 获取最终余额...');
