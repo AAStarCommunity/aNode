@@ -73,6 +73,28 @@ aNode maintains comprehensive documentation in the `docs/` directory:
 - **[setup-guide.md](docs/setup-guide.md)** - Development environment setup guide
 - **[README-test-accounts.md](docs/README-test-accounts.md)** - Test accounts and configuration guide
 
+## Live Demo
+
+🚀 **aNode Paymaster Worker is now live on Cloudflare!**
+
+**Production URL**: https://anode-js-worker.jhfnetboy.workers.dev
+
+**Available Endpoints**:
+- `GET /` - Service information and documentation
+- `GET /health` - Health check endpoint
+- `POST /api/v1/paymaster/sponsor` - Gas sponsorship endpoint
+- `POST /api/v1/paymaster/process` - Full user operation processing with validation
+
+**Test the live service**:
+```bash
+# Health check
+curl https://anode-js-worker.jhfnetboy.workers.dev/health
+
+# Process a user operation
+curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/process \
+  -H "Content-Type: application/json"
+```
+
 ## Quick Start
 
 ```bash
@@ -85,6 +107,9 @@ cd web-app && pnpm install
 
 # Start development server
 pnpm run dev
+
+# Test Cloudflare Worker locally
+cd ../cloudflare-js-worker && wrangler dev --port 8788
 
 # For Rust paymaster server (future)
 cd ../relay-server && cargo build
