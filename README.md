@@ -69,6 +69,8 @@ Complete documentation for the aNode Rust paymaster service (Cloudflare Workers)
 - **[rust-cloudflare.md](docs/aNode-rust/rust-cloudflare.md)** - Complete guide for Rust Cloudflare Workers development, deployment, and testing
 - **[RustWorkerCompatibility.md](docs/aNode-rust/RustWorkerCompatibility.md)** - Analysis of Rust Cloudflare Worker compatibility issues and solutions
 - **[account-abstraction-reference.md](docs/aNode-rust/account-abstraction-reference.md)** - Official ERC-4337 implementation reference with EntryPoint, paymaster, and stake system details
+- **[ultra-relay-paymaster-integration.md](docs/aNode-rust/ultra-relay-paymaster-integration.md)** - Analysis of how Ultra-Relay integrates paymaster capabilities into bundler
+- **[bundler-architecture-knowledge.md](docs/aNode-rust/bundler-architecture-knowledge.md)** - Comprehensive bundler architecture guide based on Alto/Ultra-Relay analysis
 
 ### 📁 docs/ - Web Application & General Documentation
 Documentation for web application and general project information:
