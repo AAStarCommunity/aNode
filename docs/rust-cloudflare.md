@@ -1,146 +1,146 @@
-# Cloudflare Workers Rust 开发指南
+# aNode
+aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
 
-## 官方文档学习总结
+- ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
+- ERC-20 PNTs and Community customized ERC-20 gas token support
+- Self-running paymaster support with SuperPaymaster relay and contract(if you want publish your ERC-20 gas token)
+- Entrypoint V06 support
+- Entrypoint V07, V08 is working on (inlude EIP-7704, EOA delegation)
 
-基于 [Cloudflare Workers Rust 官方文档](https://developers.cloudflare.com/workers/languages/rust/) 的学习记录。
+Just send me useroperation!
 
-## 核心概念
+## Phase design
+1. Phase 1: a off-chain **paymaster** signature node, working with on-chain contract.
+  - sign after verify the useroperation and sender account SBT and PNTs balance
+  - contract invoke by Entrypoint(validatePaymasterSignaure)
+  - contract set and change different public key on-chain contract by owner
+2. Phase 2: a passkey signature **validator**
+  - invoked by outer aNode to verify it is user's will, returen a aNode BLS signature aggregation
+  - if the BLS collection is enough, act as a sender, send to bundler RPC
+  - will be changed for PQC
+3. Phase 3: hardware dependent, **account manager** with TEE security guarantee
+  - support web interface for account life management(many details)
+  - support RPC API for KMS service
+4. Phase 4: **Guardian** as social recovery and deadman's switch and more security service
+  - join gourp weight for multi signature on creating AA account
+  - verify special useroperation for changing the private key, by social verifications, not onchain
+  - provide signature to confirm the special useroperation
+  - the last guardian will submit to bundler if signature is enough
+  - will change to Hash algorithm cause of Post Quantumn Computing
 
-### Workers Runtime 与 WASM
 
-Cloudflare Workers 支持使用 Rust 编写，通过 WebAssembly (WASM) 在边缘运行。与 JavaScript Workers 不同，Rust 代码被编译为 WASM，然后通过 JavaScript shim 与 Workers 运行时交互。
+## On chain contract
+We use pimlico singliton paymaster contract as initial version, thanks for their love and contribution.
+It act as onchain deposit account to Entrypoint, and a manageable public key to verify off chain signature.
+Entrypoint will invoke it's function to verify.
+It must register to SuperPaymaster to join the OpenPNTs and OpenCards and more protocols to use infras.
+We provide a 5-minutes guidance to do this.
 
-### 关键工具链
+## Off chain relay
+We use Rust to develop a new simple version, you can deploy it to Cloudflare with almost zero cost.
+We reference the Nodejs paymaster from ZeroDev, thanks for their contribution.
+It act as a off chain signer(can rotate) after verifying their pre-setting rules(like only support specific contract, specific ERC-20 and more).
 
-1. **wasm-bindgen**: JavaScript ↔ Rust 互操作
-2. **wasm-bindgen-futures**: Rust Futures ↔ JavaScript Promises
-3. **worker-build**: Cloudflare 专用构建工具
-4. **wasm-opt**: 二进制大小优化
+## Register on SuperPaymaster to run
+This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this).
 
-## 项目结构
+## Documentation Structure
 
-### 标准项目结构
+aNode maintains comprehensive documentation in the `docs/` directory:
 
-```
-my-worker/
-├── Cargo.toml
-├── wrangler.toml
-└── src/
-    └── lib.rs
-```
+### Core Architecture Documents
+- **[aNodeFrameworkAndPaymasterModuleDesign.md](docs/aNodeFrameworkAndPaymasterModuleDesign.md)** - Unified framework and paymaster module design, including ERC-4337 integration, modular architecture, and API interfaces
+- **[aNodeRoadmap.md](docs/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
+- **[aNodeArchitectureDesign.md](docs/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
 
-### Cargo.toml 配置
+### Technical Implementation Documents
+- **[aNodeAPIDesign.md](docs/aNodeAPIDesign.md)** - Multi-protocol API design (RESTful + JSON-RPC) with comprehensive endpoint specifications
+- **[aNodePolicySystem.md](docs/aNodePolicySystem.md)** - Policy management system based on ZeroDev patterns with advanced rate limiting and rule engines
+- **[SigningAndKeyManagement.md](docs/SigningAndKeyManagement.md)** - Pluggable signing mechanisms supporting Local, AWS KMS, Cloudflare Secrets, and Keyless SSL
+- **[ERC4337FlowDiagram.md](docs/ERC4337FlowDiagram.md)** - Complete ERC-4337 flow integration with aNode enhancements
+- **[ModuleDesign.md](docs/ModuleDesign.md)** - Detailed module architecture with internal call sequence diagrams
 
-```toml
-[package]
-name = "my-worker"
-version = "0.1.0"
-edition = "2021"
+### Development and Deployment Documents
+- **[ALCHEMY_ACCOUNT_KIT_LEARNING.md](docs/ALCHEMY_ACCOUNT_KIT_LEARNING.md)** - Alchemy Account Kit integration learning and examples
+- **[DEPLOY.md](docs/DEPLOY.md)** - Web application deployment guide
+- **[TEST_REPORT.md](docs/TEST_REPORT.md)** - Testing reports and Playwright test results
+- **[DetailedSystemDesign.md](docs/DetailedSystemDesign.md)** - Detailed system design specifications
+- **[PaymasterServerDesign.md](docs/PaymasterServerDesign.md)** - Legacy paymaster server design (superseded by unified framework)
+- **[RustPaymasterServerDesign.md](docs/RustPaymasterServerDesign.md)** - Legacy Rust implementation design (superseded by unified framework)
 
-[lib]
-crate-type = ["cdylib"]
+### Development Guides
+- **[ERC4337-AB-Test-Guide.md](docs/ERC4337-AB-Test-Guide.md)** - ERC-4337 Account Abstraction testing guide
+- **[setup-guide.md](docs/setup-guide.md)** - Development environment setup guide
+- **[README-test-accounts.md](docs/README-test-accounts.md)** - Test accounts and configuration guide
 
-[dependencies]
-worker = "0.5"  # Cloudflare Workers Rust bindings
+## Live Demo
 
-[profile.release]
-lto = true
-strip = true
-codegen-units = 1
-opt-level = "z"
-```
+🚀 **aNode Paymaster Worker is now live on Cloudflare!**
 
-### wrangler.toml 配置
+**Production URL**: https://anode-js-worker.jhfnetboy.workers.dev
 
-```toml
-name = "my-worker"
-main = "build/worker/shim.mjs"
-compatibility_date = "2024-01-01"
+**Available Endpoints**:
+- `GET /` - Service information and documentation
+- `GET /health` - Health check endpoint
+- `POST /api/v1/paymaster/sponsor` - Gas sponsorship endpoint
+- `POST /api/v1/paymaster/process` - Full user operation processing with validation
 
-[build]
-command = "cargo install -q worker-build && worker-build --release"
+**Test the live service**:
+```bash
+# Health check
+curl https://anode-js-worker.jhfnetboy.workers.dev/health
 
-[vars]
-NODE_ENV = "production"
-```
-
-## 事件处理器
-
-### Fetch 事件
-
-```rust
-use worker::*;
-
-#[event(fetch)]
-pub async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
-    Response::ok("Hello, World!")
-}
-```
-
-### 参数说明
-
-- **Request**: 传入的 HTTP 请求
-- **Env**: 环境变量和绑定 (KV, D1, etc.)
-- **Context**: 运行时上下文 (waitUntil, passThroughOnException)
-
-### 其他事件类型
-
-```rust
-#[event(scheduled)]
-pub async fn scheduled(event: ScheduledEvent, env: Env, ctx: Context) {
-    // Cron job 处理
-}
-
-#[event(queue)]
-pub async fn queue(batch: MessageBatch<CustomMessage>, env: Env, ctx: Context) -> Result<()> {
-    // Queue 消息处理
-}
+# Process a user operation
+curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/process \
+  -H "Content-Type: application/json"
 ```
 
-## 构建和部署流程
+### Worker Status
 
-### 1. 本地开发
+| Worker Type | Status | URL | Notes |
+|-------------|--------|-----|-------|
+| **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
+| **Rust Worker** | ✅ **Live** | https://anode-rust-demo.jhfnetboy.workers.dev | Hello World demo using official workers-rs template |
+| **aNode Relay Server** | ✅ **Live** | https://anode-relay-server.jhfnetboy.workers.dev | aNode v0.01 - ERC-4337 Paymaster Service (Hello World) |
+
+**Rust Worker 兼容性说明**:
+- 当前 wrangler 版本：4.38.0
+- Worker crate 兼容性：需要 wrangler 2.x 或 3.x 早期版本
+- 建议解决方案：使用 JavaScript Worker 或等待 Cloudflare 修复兼容性
+- 代码位置：`cloudflare-worker/` 和 `cloudflare-rust-simple/`
+
+## Quick Start
 
 ```bash
-# 安装 wrangler
-npm install -g wrangler
+# Clone the repository
+git clone https://github.com/AAStarCommunity/aNode.git
+cd aNode
 
-# 启动开发服务器
-wrangler dev
+# Install dependencies for web app
+cd web-app && pnpm install
+
+# Start development server
+pnpm run dev
+
+# Test Cloudflare Worker locally
+cd ../cloudflare-js-worker && wrangler dev --port 8788
+
+# For Rust paymaster server (future)
+cd ../relay-server && cargo build
 ```
 
-### 2. 部署到生产
+## Contributing
 
-```bash
-# 部署到 Cloudflare
-wrangler deploy
-```
+1. Read the [aNode Roadmap](docs/aNodeRoadmap.md) to understand the project vision
+2. Review [Module Design](docs/ModuleDesign.md) for architecture guidelines
+3. Follow the [API Design](docs/aNodeAPIDesign.md) for interface specifications
+4. Check [Policy System](docs/aNodePolicySystem.md) for configuration patterns
 
-### 3. 内部构建流程
+## License
 
-1. **Rust 编译**: `cargo build --target wasm32-unknown-unknown`
-2. **WASM 生成**: worker-build 创建 JavaScript shim
-3. **优化**: wasm-opt 减小二进制大小
-4. **打包**: Wrangler 打包并上传
+This project is licensed under the MIT License. 
 
-## 路由和中间件
 
-### Router 使用
-
-```rust
-use worker::*;
-
-#[event(fetch)]
-pub async fn main(req: Request, env: Env, ctx: Context) -> Result<Response> {
-    let router = Router::new();
-
-    router
-        .get("/", |_, _| Response::ok("Home"))
-        .get("/api/:id", |_, ctx| {
-            let id = ctx.param("id").unwrap_or("unknown");
-            Response::ok(format!("API: {}", id))
-        })
-        .run(req, env).await
 }
 ```
 
@@ -530,7 +530,7 @@ wrangler deploy
 - **包大小**: 275.24 KiB (压缩后 114.73 KiB)
 - **启动时间**: 1ms (生产环境)
 - **响应时间**: < 50ms
-- **环境变量**: 3个 (NODE_ENV, SERVICE_NAME, VERSION)
+- **环境变量**: 3 个 (NODE_ENV, SERVICE_NAME, VERSION)
 
 ### 🎯 未来发展路线
 
