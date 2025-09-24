@@ -28,3 +28,9 @@
 [submodule "vendor/account-abstraction"]
 	path = vendor/account-abstraction
 	url = git@github.com:eth-infinitism/account-abstraction.git
+[submodule "vendor/alto"]
+	path = vendor/alto
+	url = https://github.com/pimlicolabs/alto.git
+[submodule "vendor/ultra-relay"]
+	path = vendor/ultra-relay
+	url = https://github.com/zerodevapp/ultra-relay.git
