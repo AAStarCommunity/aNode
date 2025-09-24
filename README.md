@@ -53,6 +53,9 @@ aNode maintains comprehensive documentation in the `docs/` directory:
 - **[aNodeRoadmap.md](docs/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
 - **[aNodeArchitectureDesign.md](docs/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
 
+### Development Guides
+- **[dev-guide.md](docs/dev-guide.md)** - Comprehensive development guide with dual-version strategy, API specifications, and deployment instructions
+
 ### Technical Implementation Documents
 - **[aNodeAPIDesign.md](docs/aNodeAPIDesign.md)** - Multi-protocol API design (RESTful + JSON-RPC) with comprehensive endpoint specifications
 - **[aNodePolicySystem.md](docs/aNodePolicySystem.md)** - Policy management system based on ZeroDev patterns with advanced rate limiting and rule engines
