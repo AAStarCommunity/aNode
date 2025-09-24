@@ -34,3 +34,6 @@
 [submodule "vendor/ultra-relay"]
 	path = vendor/ultra-relay
 	url = https://github.com/zerodevapp/ultra-relay.git
+[submodule "vendor/rundler"]
+	path = vendor/rundler
+	url = git@github.com:alchemyplatform/rundler.git
