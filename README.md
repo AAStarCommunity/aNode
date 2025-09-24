@@ -147,6 +147,21 @@ cd ../relay-server && cargo build
 3. Follow the [API Design](docs/aNodeAPIDesign.md) for interface specifications
 4. Check [Policy System](docs/aNodePolicySystem.md) for configuration patterns
 
+## Reference Implementations
+
+This project analyzes and references multiple production-grade ERC-4337 implementations:
+
+### 📦 Vendor Repositories
+- **Pimlico Alto**: High-performance TypeScript bundler with extensive feature set
+- **ZeroDev Ultra-Relay**: Modified Alto with paymaster-bundler integration and zero-gas sponsorship
+- **Alchemy Rundler**: Pure Rust bundler with superior performance and type safety
+- **eth-infinitism/account-abstraction**: Official ERC-4337 protocol implementation
+
+### 📚 Documentation Analysis
+- Detailed architectural analysis in `docs/aNode-rust/bundler-architecture-knowledge.md`
+- Paymaster integration patterns in `docs/aNode-rust/ultra-relay-paymaster-integration.md`
+- Official ERC-4337 reference in `docs/aNode-rust/account-abstraction-reference.md`
+
 ## License
 
 This project is licensed under the MIT License. 
