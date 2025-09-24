@@ -1,805 +1,178 @@
-# aNode
-aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
+# aNode 签名机制与密钥管理系统设计
 
-- ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
-- ERC-20 PNTs and Community customized ERC-20 gas token support
-- Self-running paymaster support with SuperPaymaster relay and contract(if you want publish your ERC-20 gas token)
-- Entrypoint V06 support
-- Entrypoint V07, V08 is working on (inlude EIP-7704, EOA delegation)
+## 设计理念
 
-Just send me useroperation!
+aNode 的 paymaster 签名机制采用可插拔架构，支持多种密钥管理和签名服务，从本地私钥到企业级 KMS 服务，确保在不同部署环境下的安全性和灵活性。
 
-## Phase design
-1. Phase 1: a off-chain **paymaster** signature node, working with on-chain contract.
-  - sign after verify the useroperation and sender account SBT and PNTs balance
-  - contract invoke by Entrypoint(validatePaymasterSignaure)
-  - contract set and change different public key on-chain contract by owner
-2. Phase 2: a passkey signature **validator**
-  - invoked by outer aNode to verify it is user's will, returen a aNode BLS signature aggregation
-  - if the BLS collection is enough, act as a sender, send to bundler RPC
-  - will be changed for PQC
-3. Phase 3: hardware dependent, **account manager** with TEE security guarantee
-  - support web interface for account life management(many details)
-  - support RPC API for KMS service
-4. Phase 4: **Guardian** as social recovery and deadman's switch and more security service
-  - join gourp weight for multi signature on creating AA account
-  - verify special useroperation for changing the private key, by social verifications, not onchain
-  - provide signature to confirm the special useroperation
-  - the last guardian will submit to bundler if signature is enough
-  - will change to Hash algorithm cause of Post Quantumn Computing
+## 密钥管理服务调研
 
+### 1. AWS KMS (Key Management Service)
 
-## On chain contract
-We use pimlico singliton paymaster contract as initial version, thanks for their love and contribution.
-It act as onchain deposit account to Entrypoint, and a manageable public key to verify off chain signature.
-Entrypoint will invoke it's function to verify.
-It must register to SuperPaymaster to join the OpenPNTs and OpenCards and more protocols to use infras.
-We provide a 5-minutes guidance to do this.
+#### 核心 API 模式
+```http
+# 创建密钥
+POST https://kms.{region}.amazonaws.com/
+X-Amz-Target: TrentService.CreateKey
+Content-Type: application/x-amz-json-1.1
 
-## Off chain relay
-We use Rust to develop a new simple version, you can deploy it to Cloudflare with almost zero cost.
-We reference the Nodejs paymaster from ZeroDev, thanks for their contribution.
-It act as a off chain signer(can rotate) after verifying their pre-setting rules(like only support specific contract, specific ERC-20 and more).
+{
+  "KeyUsage": "SIGN_VERIFY",
+  "KeySpec": "ECC_SECG_P256K1",
+  "Origin": "AWS_KMS"
+}
 
-## Register on SuperPaymaster to run
-This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this).
-
-## Documentation Structure
-
-aNode maintains comprehensive documentation in the `docs/` directory:
-
-### 📁 [docs/aNode-rust/](docs/aNode-rust/) - aNode Rust Implementation
-Complete documentation for the aNode Rust paymaster service (Cloudflare Workers):
-
-#### Core Architecture Documents
-- **[aNodeFrameworkAndPaymasterModuleDesign.md](docs/aNode-rust/aNodeFrameworkAndPaymasterModuleDesign.md)** - Unified framework and paymaster module design, including ERC-4337 integration, modular architecture, and API interfaces
-- **[aNodeRoadmap.md](docs/aNode-rust/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
-- **[aNodeArchitectureDesign.md](docs/aNode-rust/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
-- **[ArchitecturalAnalysis.md](docs/aNode-rust/ArchitecturalAnalysis.md)** - Senior architect's perspective on aNode system design analysis
-
-#### Technical Implementation Documents
-- **[aNodeAPIDesign.md](docs/aNode-rust/aNodeAPIDesign.md)** - Multi-protocol API design (RESTful + JSON-RPC) with comprehensive endpoint specifications
-- **[aNodePolicySystem.md](docs/aNode-rust/aNodePolicySystem.md)** - Policy management system based on ZeroDev patterns with advanced rate limiting and rule engines
-- **[SigningAndKeyManagement.md](docs/aNode-rust/SigningAndKeyManagement.md)** - Pluggable signing mechanisms supporting Local, AWS KMS, Cloudflare Secrets, and Keyless SSL
-- **[ERC4337FlowDiagram.md](docs/aNode-rust/ERC4337FlowDiagram.md)** - Complete ERC-4337 flow integration with aNode enhancements
-- **[ModuleDesign.md](docs/aNode-rust/ModuleDesign.md)** - Detailed module architecture with internal call sequence diagrams
-
-#### Development Guides
-- **[dev-guide.md](docs/aNode-rust/dev-guide.md)** - Comprehensive development guide with dual-version strategy, API specifications, and deployment instructions
-- **[rust-cloudflare.md](docs/aNode-rust/rust-cloudflare.md)** - Complete guide for Rust Cloudflare Workers development, deployment, and testing
-- **[RustWorkerCompatibility.md](docs/aNode-rust/RustWorkerCompatibility.md)** - Analysis of Rust Cloudflare Worker compatibility issues and solutions
-- **[account-abstraction-reference.md](docs/aNode-rust/account-abstraction-reference.md)** - Official ERC-4337 implementation reference with EntryPoint, paymaster, and stake system details
-- **[ultra-relay-paymaster-integration.md](docs/aNode-rust/ultra-relay-paymaster-integration.md)** - Analysis of how Ultra-Relay integrates paymaster capabilities into bundler
-- **[bundler-architecture-knowledge.md](docs/aNode-rust/bundler-architecture-knowledge.md)** - Comprehensive bundler architecture guide based on Alto/Ultra-Relay analysis
-
-### 📁 docs/ - Web Application & General Documentation
-Documentation for web application and general project information:
-
-- **[ALCHEMY_ACCOUNT_KIT_LEARNING.md](docs/ALCHEMY_ACCOUNT_KIT_LEARNING.md)** - Alchemy Account Kit integration learning and examples
-- **[DEPLOY.md](docs/DEPLOY.md)** - Web application deployment guide
-- **[TEST_REPORT.md](docs/TEST_REPORT.md)** - Testing reports and Playwright test results
-- **[DetailedSystemDesign.md](docs/DetailedSystemDesign.md)** - Detailed system design specifications
-- **[ERC4337-AB-Test-Guide.md](docs/ERC4337-AB-Test-Guide.md)** - ERC-4337 Account Abstraction testing guide
-- **[setup-guide.md](docs/setup-guide.md)** - Development environment setup guide
-- **[README-test-accounts.md](docs/README-test-accounts.md)** - Test accounts and configuration guide
-- **[Changes.md](docs/Changes.md)** - Project change log and version history
-
-## Live Demo
-
-🚀 **aNode Paymaster Worker is now live on Cloudflare!**
-
-**Production URL**: https://anode-js-worker.jhfnetboy.workers.dev
-
-**Available Endpoints**:
-- `GET /` - Service information and documentation
-- `GET /health` - Health check endpoint
-- `POST /api/v1/paymaster/sponsor` - Gas sponsorship endpoint
-- `POST /api/v1/paymaster/process` - Full user operation processing with validation
-
-**Test the live service**:
-```bash
-# Health check
-curl https://anode-js-worker.jhfnetboy.workers.dev/health
-
-# Process a user operation
-curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/process \
-  -H "Content-Type: application/json"
-```
-
-### Worker Status
-
-| Worker Type | Status | URL | Notes |
-|-------------|--------|-----|-------|
-| **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
-| **aNode Relay Server** | ✅ **Live** | https://anode-relay-server.jhfnetboy.workers.dev | aNode v0.01 - ERC-4337 Paymaster Service (Hello World) |
-| **Rust Demo Worker** | 🗑️ **Removed** | N/A | Was: Hello World demo (cleaned up to save space) |
-
-**Rust Worker 兼容性说明**:
-- 当前 wrangler 版本：4.38.0
-- Worker crate 兼容性：需要 wrangler 2.x 或 3.x 早期版本
-- 建议解决方案：使用 JavaScript Worker 或等待 Cloudflare 修复兼容性
-- 代码位置：`cloudflare-worker/` 和 `cloudflare-rust-simple/`
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/AAStarCommunity/aNode.git
-cd aNode
-
-# Install dependencies for web app
-cd web-app && pnpm install
-
-# Start development server
-pnpm run dev
-
-# Test Cloudflare Worker locally
-cd ../cloudflare-js-worker && wrangler dev --port 8788
-
-# For Rust paymaster server (future)
-cd ../relay-server && cargo build
-```
-
-## Contributing
-
-1. Read the [aNode Roadmap](docs/aNodeRoadmap.md) to understand the project vision
-2. Review [Module Design](docs/ModuleDesign.md) for architecture guidelines
-3. Follow the [API Design](docs/aNodeAPIDesign.md) for interface specifications
-4. Check [Policy System](docs/aNodePolicySystem.md) for configuration patterns
-
-## License
-
-This project is licensed under the MIT License. 
-
-
-  } else {
-    await this.rejectUserOp(error.userOp, error.reason)
-  }
+# 签名操作
+POST https://kms.{region}.amazonaws.com/
+X-Amz-Target: TrentService.Sign
+{
+  "KeyId": "arn:aws:kms:us-west-2:123456789012:key/1234abcd-12ab-34cd-56ef-1234567890ab",
+  "Message": "base64-encoded-hash",
+  "MessageType": "DIGEST",
+  "SigningAlgorithm": "ECDSA_SHA_256"
 }
 ```
 
-## 性能优化技术
+#### 特点分析
+- **优点**：企业级安全、审计日志、细粒度权限控制、全球可用
+- **缺点**：成本较高、延迟相对较高、需要 AWS 账户
+- **适用场景**：大型企业、高安全要求、已有 AWS 基础设施
 
-### 1. 批量处理 (Bundling)
+### 2. Cloudflare Secrets Store (2025 新特性)
 
-**核心策略**:
-- 多个 UserOperation 合并为单个交易
-- 减少交易费用和网络开销
-- 优化 gas 使用效率
-
-```typescript
-class BundleManager {
-  private maxBundleSize = 10
-  private maxBundleDelay = 10000 // 10 秒
-
-  async createBundle(userOps: UserOperation[]): Promise<Bundle> {
-    // 1. 按 gas 价格排序
-    const sortedOps = sortByGasPrice(userOps)
-
-    // 2. 计算最优批次大小
-    const bundleSize = Math.min(sortedOps.length, this.maxBundleSize)
-
-    // 3. 估算总 gas
-    const totalGas = await estimateBundleGas(sortedOps.slice(0, bundleSize))
-
-    return {
-      userOps: sortedOps.slice(0, bundleSize),
-      totalGas,
-      expectedProfit: calculateProfit(totalGas, sortedOps)
-    }
-  }
-}
-```
-
-### 2. Gas 价格优化
-
-**动态 gas 价格策略**:
-
-```typescript
-interface GasPriceStrategy {
-  slow: bigint    // 慢速交易
-  standard: bigint // 标准交易
-  fast: bigint    // 快速交易
+#### API 模式分析
+```http
+# 创建/更新密钥
+POST https://api.cloudflare.com/client/v4/accounts/{account_id}/secrets
+Authorization: Bearer {api_token}
+{
+  "name": "PAYMASTER_PRIVATE_KEY",
+  "value": "0x1234567890abcdef...",
+  "type": "secret_text"
 }
 
-class GasPriceManager {
-  async getOptimalGasPrice(userOp: UserOperation): Promise<GasPriceStrategy> {
-    const networkConditions = await this.monitor.getNetworkConditions()
-    const userPreferences = this.extractUserPreferences(userOp)
-
-    return this.calculateStrategy(networkConditions, userPreferences)
-  }
-}
-```
-
-### 3. 内存池优化
-
-**优先级队列实现**:
-
-```typescript
-class PriorityMempool {
-  private queues: Map<Priority, UserOperation[]> = new Map()
-
-  add(userOp: UserOperation) {
-    const priority = this.calculatePriority(userOp)
-    const queue = this.queues.get(priority) || []
-    queue.push(userOp)
-    this.queues.set(priority, queue)
-  }
-
-  getNextBatch(): UserOperation[] {
-    // 按优先级返回操作批次
-    for (const [priority, queue] of this.queues) {
-      if (queue.length > 0) {
-        return queue.splice(0, BATCH_SIZE)
-      }
-    }
-    return []
-  }
-}
-```
-
-## 安全和可靠性
-
-### 1. 声誉系统 (Reputation System)
-
-**目的**: 防止恶意用户滥用系统
-
-```typescript
-interface ReputationEntry {
-  address: Address
-  stake: bigint
-  opsSeen: number
-  opsIncluded: number
-  status: 'ok' | 'throttled' | 'banned'
-}
-
-class ReputationManager {
-  // 跟踪实体的历史表现
-  updateReputation(address: Address, success: boolean) {
-    const entry = this.getEntry(address)
-    entry.opsSeen++
-
-    if (success) {
-      entry.opsIncluded++
-    }
-
-    this.updateStatus(entry)
-  }
-
-  // 基于声誉决定是否接受操作
-  shouldAccept(address: Address): boolean {
-    const entry = this.getEntry(address)
-    return entry.status !== 'banned' && this.hasMinimumStake(entry)
-  }
-}
-```
-
-### 2. 速率限制 (Rate Limiting)
-
-**防止 DoS 攻击**:
-
-```typescript
-class RateLimiter {
-  private attempts = new Map<Address, number[]>()
-
-  canProceed(address: Address): boolean {
-    const now = Date.now()
-    const window = now - RATE_LIMIT_WINDOW
-
-    // 清理过期记录
-    const userAttempts = this.attempts.get(address) || []
-    const recentAttempts = userAttempts.filter(time => time > window)
-
-    // 检查是否超过限制
-    if (recentAttempts.length >= MAX_ATTEMPTS) {
-      return false
-    }
-
-    // 记录新尝试
-    recentAttempts.push(now)
-    this.attempts.set(address, recentAttempts)
-
-    return true
-  }
-}
-```
-
-### 3. 状态同步和一致性
-
-**处理区块链重组**:
-
-```typescript
-class StateManager {
-  async handleReorg(newBlock: Block) {
-    // 1. 识别受影响的操作
-    const affectedOps = await this.findAffectedOps(newBlock)
-
-    // 2. 重新验证状态
-    for (const op of affectedOps) {
-      await this.revalidateOp(op)
-    }
-
-    // 3. 更新内存池
-    await this.updateMempool(affectedOps)
-  }
-}
-```
-
-## 多链支持架构
-
-### 网络抽象层
-
-**统一的链上接口**:
-
-```typescript
-interface ChainAdapter {
-  getChainId(): Promise<number>
-  estimateGas(userOp: UserOperation): Promise<GasEstimate>
-  submitBundle(bundle: Bundle): Promise<TransactionReceipt>
-  getBlockNumber(): Promise<number>
-  validateUserOp(userOp: UserOperation): Promise<ValidationResult>
-}
-
-class EthereumAdapter implements ChainAdapter {
-  // Ethereum 特定的实现
-}
-
-class PolygonAdapter implements ChainAdapter {
-  // Polygon 特定的实现
-}
-```
-
-### 跨链操作处理
-
-**EntryPoint 版本管理**:
-
-```typescript
-const ENTRYPOINT_VERSIONS = {
-  '0.6': {
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-    abi: EntryPointV06Abi
-  },
-  '0.7': {
-    address: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
-    abi: EntryPointV07Abi
-  }
-}
-
-class EntryPointManager {
-  getEntryPoint(chainId: number, version: string) {
-    const config = ENTRYPOINT_CONFIGS[chainId]?.[version]
-    if (!config) {
-      throw new Error(`Unsupported EntryPoint version ${version} on chain ${chainId}`)
-    }
-    return config
-  }
-}
-```
-
-## 监控和可观测性
-
-### 1. 指标收集 (Metrics)
-
-**关键指标**:
-
-```typescript
-interface BundlerMetrics {
-  // 操作处理指标
-  userOpsReceived: Counter
-  userOpsProcessed: Counter
-  userOpsFailed: Counter
-
-  // 性能指标
-  bundleProcessingTime: Histogram
-  gasPriceUpdates: Counter
-
-  // 错误指标
-  validationErrors: Counter
-  executionErrors: Counter
-  networkErrors: Counter
-
-  // 业务指标
-  totalGasSponsored: Counter
-  totalFeesCollected: Counter
-}
-```
-
-### 2. 日志系统 (Logging)
-
-**结构化日志**:
-
-```typescript
-interface LogEntry {
-  timestamp: Date
-  level: 'debug' | 'info' | 'warn' | 'error'
-  component: string
-  userOpHash?: Hex
-  message: string
-  metadata?: Record<string, any>
-}
-
-class Logger {
-  info(component: string, message: string, metadata?: any) {
-    console.log(JSON.stringify({
-      timestamp: new Date(),
-      level: 'info',
-      component,
-      message,
-      ...metadata
-    }))
-  }
-}
-```
-
-## aNode Bundler 设计指导
-
-### 1. 架构选择
-
-**推荐采用类似的模块化架构**:
-
-```
-aNode-bundler/
-├── src/
-│   ├── rpc/           # RPC 接口
-│   ├── mempool/       # 内存池
-│   ├── executor/      # 执行引擎
-│   ├── paymaster/     # Paymaster 集成
-│   ├── handlers/      # 处理器
-│   └── utils/         # 工具函数
-├── contracts/         # 链上合约
-├── test/             # 测试
-└── docs/            # 文档
-```
-
-### 2. 技术栈建议
-
-**核心技术栈**:
-- **语言**: TypeScript (类型安全，生态成熟)
-- **Web 框架**: Fastify (高性能，插件丰富)
-- **区块链**: Viem (现代，以太坊优先)
-- **数据库**: Redis (内存池) + PostgreSQL (持久化)
-- **监控**: Prometheus + Grafana
-
-### 3. 开发路线图
-
-#### Phase 1: 基础功能
-- [ ] RPC 接口实现
-- [ ] 基本的 UserOperation 处理
-- [ ] Gas 估算功能
-
-#### Phase 2: 高级功能
-- [ ] Mempool 管理
-- [ ] 批量打包优化
-- [ ] Paymaster 集成
-
-#### Phase 3: 生产就绪
-- [ ] 监控和日志
-- [ ] 错误处理和恢复
-- [ ] 性能优化
-
-#### Phase 4: 多链扩展
-- [ ] 多网络支持
-- [ ] 跨链操作
-- [ ] 统一接口
-
-## 总结
-
-基于 Alto 和 Ultra-Relay 的分析，现代 ERC-4337 bundler 的核心特征包括：
-
-1. **模块化架构**: 清晰的功能分离和职责划分
-2. **异步处理**: 基于事件驱动的高并发处理能力
-3. **性能优化**: 批量处理、gas 优化、智能路由
-4. **安全可靠**: 声誉系统、速率限制、状态一致性
-5. **可扩展性**: 多链支持、插件化架构
-
-这些设计原则为 aNode bundler 的开发提供了坚实的理论基础和实践指导。
-
----
-
-*基于 Pimlico Alto 和 ZeroDev Ultra-Relay 架构分析*
-      "limit": "1000000000000000000", // 1 ETH in wei
-      "window": 3600, // 1 hour in seconds
-      "enabled": true
-    }
-  ],
-  "conditions": [
-    {
-      "field": "function",
-      "operator": "in",
-      "value": ["swap", "addLiquidity"]
-    }
+# 批量管理
+POST https://api.cloudflare.com/client/v4/accounts/{account_id}/secrets/bulk
+{
+  "secrets": [
+    {"name": "KEY_1", "value": "..."},
+    {"name": "KEY_2", "value": "..."}
   ]
 }
 ```
 
-#### 3.2 查询策略状态
-```http
-GET /api/v1/policies/{policyId}/status?wallet=0x...&contract=0x...
+#### Rust Workers 集成
+```toml
+# wrangler.toml
+[[secrets]]
+binding = "PAYMASTER_KEY"
+secret_name = "PAYMASTER_PRIVATE_KEY"
 ```
 
-### 4. 多协议支持
+```rust
+// 在 Worker 中访问
+let private_key = env.secret("PAYMASTER_KEY")?;
+```
 
-#### 4.1 RESTful API（主要）
-标准的 HTTP 方法和状态码。
+#### 特点分析
+- **优点**：边缘部署、低延迟、RBAC 支持、版本控制、审计日志
+- **缺点**：Beta 阶段、功能相对简单、主要针对 Workers 生态
+- **适用场景**：边缘计算、微服务架构、快速部署
 
-#### 4.2 JSON-RPC 2.0 支持
+### 3. Cloudflare Keyless SSL
+
+#### 架构模式
+Keyless SSL 是一种"无钥"模式，私钥保留在用户控制的服务器上，Cloudflare 仅处理代理和 TLS 终止，通过安全通道请求签名操作。
+
+```mermaid
+graph LR
+    CF[Cloudflare Edge] --> Tunnel[Cloudflare Tunnel]
+    Tunnel --> KeyServer[用户密钥服务器]
+    KeyServer --> HSM[硬件安全模块]
+    
+    CF -.->|TLS握手请求| Tunnel
+    Tunnel -.->|签名请求| KeyServer
+    KeyServer -.->|签名响应| Tunnel
+    Tunnel -.->|签名响应| CF
+```
+
+#### API 模式分析
 ```http
-POST /api/v1/rpc
+# 通过 Cloudflare Tunnel 的签名请求
+POST https://tunnel.example.com/sign
+Authorization: Bearer {tunnel_token}
 Content-Type: application/json
 
 {
-  "jsonrpc": "2.0",
-  "method": "anode_sponsorUserOperation",
-  "params": {
-    "userOperation": { ... },
-    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-    "chainId": 1,
-    "context": { "type": "sponsor" }
-  },
-  "id": 1
+  "algorithm": "ECDSA_SHA256",
+  "data": "base64-encoded-hash",
+  "key_id": "paymaster-key-001"
+}
+
+# 响应
+{
+  "signature": "base64-encoded-signature",
+  "algorithm": "ECDSA_SHA256",
+  "key_id": "paymaster-key-001"
 }
 ```
 
-## 模块化架构设计
+#### 特点分析
+- **优点**：私钥主权、最高安全性、合规性强、支持 HSM
+- **缺点**：部署复杂、需要维护密钥服务器、延迟相对较高
+- **适用场景**：金融级安全要求、监管严格环境、私有云部署
 
-### 1. 内部模块调用时序图
+### 4. HashiCorp Vault
+
+#### API 模式
+```http
+# 创建签名密钥
+POST /v1/transit/keys/paymaster-key
+{
+  "type": "ecdsa-p256"
+}
+
+# 签名操作
+POST /v1/transit/sign/paymaster-key/sha2-256
+{
+  "input": "base64-encoded-data"
+}
+```
+
+## aNode 签名机制架构设计
+
+### 1. 可插拔签名架构
 
 ```mermaid
-sequenceDiagram
-    participant API as API Layer
-    participant Router as Request Router
-    participant Pipeline as Module Pipeline
-    participant SBT as SBT Validator
-    participant PNT as PNT Validator
-    participant Security as Security Filter
-    participant Policy as Policy Engine
-    participant Paymaster as Paymaster Signer
-    participant Cache as Cache Layer
-    participant DB as Database
-    participant Blockchain as Blockchain Client
-
-    %% API 请求处理
-    API->>Router: process_user_operation(user_op)
-    Router->>Pipeline: execute_pipeline(user_op, context)
-
-    %% 并行验证阶段
-    par SBT 验证
-        Pipeline->>SBT: validate(sender_address)
-        SBT->>Cache: get_sbt_cache(address)
-        alt Cache Miss
-            SBT->>Blockchain: query_sbt_tokens(address)
-            Blockchain-->>SBT: sbt_tokens[]
-            SBT->>Cache: set_sbt_cache(address, tokens)
-        else Cache Hit
-            Cache-->>SBT: cached_sbt_tokens[]
-        end
-        SBT->>SBT: validate_sbt_requirements(tokens)
-        SBT-->>Pipeline: SBTValidationResult
-    and PNT 验证
-        Pipeline->>PNT: validate(sender_address)
-        PNT->>Cache: get_pnt_cache(address)
-        alt Cache Miss
-            PNT->>Blockchain: query_pnt_balance(address)
-            Blockchain-->>PNT: pnt_balance
-            PNT->>Cache: set_pnt_cache(address, balance)
-        else Cache Hit
-            Cache-->>PNT: cached_pnt_balance
-        end
-        PNT->>PNT: validate_balance_requirements(balance)
-        PNT-->>Pipeline: PNTValidationResult
-    and 安全检查
-        Pipeline->>Security: assess_risk(user_op)
-        Security->>Security: extract_target_contract(call_data)
-        Security->>Cache: get_contract_cache(contract_address)
-        alt Cache Miss
-            Security->>Blockchain: get_contract_info(address)
-            Blockchain-->>Security: contract_info
-            Security->>Security: assess_contract_risk(info)
-            Security->>Cache: set_contract_cache(address, risk)
-        else Cache Hit
-            Cache-->>Security: cached_risk_assessment
-        end
-        Security-->>Pipeline: SecurityAssessment
+graph TB
+    PaymasterSigner[Paymaster Signer] --> SignerInterface[Signer Interface]
+    
+    SignerInterface --> LocalSigner[Local Key Signer]
+    SignerInterface --> AWSSigner[AWS KMS Signer]  
+    SignerInterface --> CFSecretsSigner[Cloudflare Secrets Signer]
+    SignerInterface --> CFKeylessSigner[Cloudflare Keyless Signer]
+    SignerInterface --> VaultSigner[HashiCorp Vault Signer]
+    SignerInterface --> CustomSigner[Custom KMS Signer]
+    
+    LocalSigner --> LocalKeyStore[(Local Key Store)]
+    AWSSigner --> AWSKMS[AWS KMS Service]
+    CFSecretsSigner --> CFSecrets[Cloudflare Secrets Store]
+    CFKeylessSigner --> CFTunnel[Cloudflare Tunnel]
+    CFTunnel --> KeyServer[用户密钥服务器]
+    VaultSigner --> HCVault[HashiCorp Vault]
+    CustomSigner --> CustomKMS[Custom KMS Service]
+    
+    subgraph Configuration
+        SignerConfig[Signer Configuration]
+        SignerFactory[Signer Factory]
     end
-
-    %% 策略检查
-    Pipeline->>Policy: check_policies(user_op, context)
-    Policy->>Cache: get_rate_limits(policy_keys)
-    Policy->>Policy: evaluate_policies(user_op, limits)
-    Policy->>Cache: update_rate_limits(policy_keys, usage)
-    Policy-->>Pipeline: PolicyResult
-
-    %% 决策分支
-    alt 验证失败
-        Pipeline-->>Router: ValidationError
-        Router-->>API: ErrorResponse
-    else 需要确认
-        Pipeline->>DB: store_confirmation_request(token, user_op)
-        Pipeline-->>Router: ConfirmationRequired
-        Router-->>API: ConfirmationResponse
-    else 验证通过
-        Pipeline->>Paymaster: sign_user_operation(user_op)
-        Paymaster->>Paymaster: generate_paymaster_signature(user_op)
-        Paymaster->>DB: log_sponsored_operation(user_op, signature)
-        Paymaster-->>Pipeline: SignedUserOperation
-        Pipeline-->>Router: ProcessingSuccess
-        Router-->>API: SuccessResponse
-    end
+    
+    SignerFactory --> SignerInterface
+    SignerConfig --> SignerFactory
 ```
 
-### 2. 核心模块实现
+### 2. 核心签名接口设计
 
-#### 2.1 SBT Validator 模块
-```rust
-pub struct SBTValidator {
-    config: SBTConfig,
-    blockchain_client: Arc<BlockchainClient>,
-    cache: Arc<CacheManager>,
-    metrics: Arc<MetricsCollector>,
-}
-
-#[async_trait]
-impl ModuleProcessor for SBTValidator {
-    async fn process(&self, context: &ProcessingContext) -> Result<ModuleResult, ModuleError> {
-        let validation_result = self.validate(&context.user_operation.sender).await?;
-
-        if !validation_result.is_valid {
-            return Ok(ModuleResult::Block(BlockReason::SBTValidationFailed {
-                missing_types: validation_result.missing_types,
-                required_types: validation_result.required_types,
-            }));
-        }
-
-        let mut updated_context = context.clone();
-        updated_context.add_validation_result("sbt", ValidationResult::SBT(validation_result));
-
-        Ok(ModuleResult::Continue(updated_context))
-    }
-
-    fn name(&self) -> &'static str {
-        "sbt_validator"
-    }
-
-    fn version(&self) -> &'static str {
-        "1.0.0"
-    }
-}
-```
-
-#### 2.2 PNT Validator 模块
-```rust
-pub struct PNTValidator {
-    config: PNTConfig,
-    blockchain_client: Arc<BlockchainClient>,
-    cache: Arc<CacheManager>,
-    metrics: Arc<MetricsCollector>,
-}
-
-#[async_trait]
-impl ModuleProcessor for PNTValidator {
-    async fn process(&self, context: &ProcessingContext) -> Result<ModuleResult, ModuleError> {
-        let validation_result = self.validate(&context.user_operation.sender).await?;
-
-        if !validation_result.is_valid {
-            return Ok(ModuleResult::Block(BlockReason::InsufficientPNTBalance {
-                required: validation_result.requirements.min_required,
-                available: validation_result.effective_balance,
-            }));
-        }
-
-        let mut updated_context = context.clone();
-        updated_context.add_validation_result("pnt", ValidationResult::PNT(validation_result));
-
-        Ok(ModuleResult::Continue(updated_context))
-    }
-
-    fn name(&self) -> &'static str {
-        "pnt_validator"
-    }
-
-    fn version(&self) -> &'static str {
-        "1.0.0"
-    }
-}
-```
-
-#### 2.3 Security Filter 模块
-```rust
-pub struct SecurityFilter {
-    config: SecurityConfig,
-    risk_providers: Vec<Box<dyn RiskProvider>>,
-    blockchain_client: Arc<BlockchainClient>,
-    cache: Arc<CacheManager>,
-    metrics: Arc<MetricsCollector>,
-}
-
-#[async_trait]
-impl ModuleProcessor for SecurityFilter {
-    async fn process(&self, context: &ProcessingContext) -> Result<ModuleResult, ModuleError> {
-        let assessment = self.assess_risk(&context.user_operation).await?;
-
-        match assessment.risk_level {
-            SecurityLevel::Blocked => {
-                Ok(ModuleResult::Block(BlockReason::SecurityViolation {
-                    risk_score: assessment.risk_score,
-                    risk_factors: assessment.risk_factors,
-                }))
-            }
-            SecurityLevel::Critical | SecurityLevel::High | SecurityLevel::Medium => {
-                if assessment.requires_confirmation {
-                    Ok(ModuleResult::Warning(SecurityWarning {
-                        level: assessment.risk_level,
-                        title: "Security Risk Detected".to_string(),
-                        message: format!("Risk score: {}/100", assessment.risk_score),
-                        risk_factors: assessment.risk_factors.iter()
-                            .map(|f| f.description.clone())
-                            .collect(),
-                        recommendations: assessment.recommendations,
-                        requires_confirmation: true,
-                        assessment: Some(assessment),
-                    }))
-                } else {
-                    let mut updated_context = context.clone();
-                    updated_context.add_validation_result("security", ValidationResult::Security(assessment));
-                    Ok(ModuleResult::Continue(updated_context))
-                }
-            }
-            _ => {
-                let mut updated_context = context.clone();
-                updated_context.add_validation_result("security", ValidationResult::Security(assessment));
-                Ok(ModuleResult::Continue(updated_context))
-            }
-        }
-    }
-
-    fn name(&self) -> &'static str {
-        "security_filter"
-    }
-
-    fn version(&self) -> &'static str {
-        "1.0.0"
-    }
-}
-```
-
-#### 2.4 Paymaster Signer 模块
-```rust
-pub struct PaymasterSigner {
-    signer: Box<dyn PaymasterSigner>,
-    config: PaymasterConfig,
-    blockchain_client: Arc<BlockchainClient>,
-    metrics: Arc<MetricsCollector>,
-}
-
-#[async_trait]
-impl ModuleProcessor for PaymasterSigner {
-    async fn process(&self, context: &ProcessingContext) -> Result<ModuleResult, ModuleError> {
-        let signed_operation = self.signer.sign_user_operation_hash(
-            &context.user_operation.hash(),
-            &SigningContext::from_processing_context(context),
-        ).await?;
-
-        let mut updated_context = context.clone();
-        updated_context.user_operation.paymaster_and_data = signed_operation.paymaster_and_data;
-        updated_context.add_validation_result("paymaster", ValidationResult::Signed(signed_operation));
-
-        Ok(ModuleResult::Continue(updated_context))
-    }
-
-    fn name(&self) -> &'static str {
-        "paymaster_signer"
-    }
-
-    fn version(&self) -> &'static str {
-        "1.0.0"
-    }
-}
-```
-
-### 3. 可插拔签名机制
-
-#### 3.1 统一签名接口
+#### 2.1 统一签名接口
 ```rust
 #[async_trait]
 pub trait PaymasterSigner: Send + Sync {
@@ -809,21 +182,99 @@ pub trait PaymasterSigner: Send + Sync {
         hash: &H256,
         context: &SigningContext,
     ) -> Result<Signature, SigningError>;
-
+    
     /// 获取签名者地址
     async fn get_address(&self) -> Result<Address, SigningError>;
-
+    
     /// 验证签名能力（健康检查）
     async fn verify_capability(&self) -> Result<SignerCapability, SigningError>;
-
+    
     /// 获取签名者元数据
     fn get_metadata(&self) -> SignerMetadata;
 }
+
+/// 签名上下文
+#[derive(Debug, Clone)]
+pub struct SigningContext {
+    pub user_operation: UserOperation,
+    pub entry_point: Address,
+    pub chain_id: u64,
+    pub timestamp: u64,
+    pub request_id: String,
+}
+
+/// 签名能力信息
+#[derive(Debug, Clone)]
+pub struct SignerCapability {
+    pub can_sign: bool,
+    pub max_concurrent_requests: Option<u32>,
+    pub estimated_latency_ms: u32,
+    pub supported_curves: Vec<CurveType>,
+}
+
+/// 签名者元数据
+#[derive(Debug, Clone)]
+pub struct SignerMetadata {
+    pub name: String,
+    pub version: String,
+    pub provider: SignerProvider,
+    pub security_level: SecurityLevel,
+    pub cost_per_signature: Option<f64>,
+}
+
+#[derive(Debug, Clone)]
+pub enum SignerProvider {
+    Local,
+    AWSKMS,
+    CloudflareSecrets,
+    CloudflareKeyless,
+    HashiCorpVault,
+    Custom(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SecurityLevel {
+    Development,  // 本地开发
+    Testing,      // 测试环境
+    Staging,      // 预生产环境  
+    Production,   // 生产环境
+    Enterprise,   // 企业级
+}
 ```
 
-#### 3.2 签名器实现
+#### 2.2 签名错误处理
+```rust
+#[derive(thiserror::Error, Debug)]
+pub enum SigningError {
+    #[error("Key not found: {key_id}")]
+    KeyNotFound { key_id: String },
+    
+    #[error("Authentication failed: {reason}")]
+    AuthenticationFailed { reason: String },
+    
+    #[error("KMS service unavailable: {service}")]
+    ServiceUnavailable { service: String },
+    
+    #[error("Rate limit exceeded: {limit} requests per {window}")]
+    RateLimitExceeded { limit: u32, window: String },
+    
+    #[error("Invalid signature parameters: {details}")]
+    InvalidParameters { details: String },
+    
+    #[error("Network error: {error}")]
+    NetworkError { error: String },
+    
+    #[error("Configuration error: {config}")]
+    ConfigurationError { config: String },
+    
+    #[error("Security policy violation: {policy}")]
+    SecurityViolation { policy: String },
+}
+```
 
-**本地私钥签名器**：
+### 3. 具体签名器实现设计
+
+#### 3.1 本地私钥签名器
 ```rust
 pub struct LocalKeySigner {
     private_key: SecretKey,
@@ -831,15 +282,31 @@ pub struct LocalKeySigner {
     config: LocalSignerConfig,
 }
 
+#[derive(Debug, Clone)]
+pub struct LocalSignerConfig {
+    pub key_derivation_path: Option<String>,
+    pub enable_key_rotation: bool,
+    pub backup_keys: Vec<String>,
+}
+
 impl LocalKeySigner {
     pub fn from_private_key(private_key: &str) -> Result<Self, SigningError> {
         let key = SecretKey::from_str(private_key)?;
         let address = Address::from_private_key(&key)?;
+        
         Ok(Self {
             private_key: key,
             address,
             config: LocalSignerConfig::default(),
         })
+    }
+    
+    pub fn from_mnemonic(
+        mnemonic: &str, 
+        derivation_path: &str
+    ) -> Result<Self, SigningError> {
+        let key = derive_private_key_from_mnemonic(mnemonic, derivation_path)?;
+        Self::from_private_key(&key)
     }
 }
 
@@ -853,11 +320,11 @@ impl PaymasterSigner for LocalKeySigner {
         let signature = self.private_key.sign_hash(hash)?;
         Ok(signature)
     }
-
+    
     async fn get_address(&self) -> Result<Address, SigningError> {
         Ok(self.address)
     }
-
+    
     async fn verify_capability(&self) -> Result<SignerCapability, SigningError> {
         Ok(SignerCapability {
             can_sign: true,
@@ -866,7 +333,7 @@ impl PaymasterSigner for LocalKeySigner {
             supported_curves: vec![CurveType::Secp256k1],
         })
     }
-
+    
     fn get_metadata(&self) -> SignerMetadata {
         SignerMetadata {
             name: "Local Key Signer".to_string(),
@@ -879,13 +346,225 @@ impl PaymasterSigner for LocalKeySigner {
 }
 ```
 
-**Cloudflare Secrets Store 签名器**：
+#### 3.2 AWS KMS 签名器
+```rust
+pub struct AWSKMSSigner {
+    client: aws_sdk_kms::Client,
+    key_id: String,
+    address: Address,
+    config: AWSKMSConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct AWSKMSConfig {
+    pub region: String,
+    pub key_id: String,
+    pub signing_algorithm: String,
+    pub max_retry_attempts: u32,
+    pub timeout_seconds: u64,
+}
+
+impl AWSKMSSigner {
+    pub async fn new(config: AWSKMSConfig) -> Result<Self, SigningError> {
+        let aws_config = aws_config::load_from_env().await;
+        let client = aws_sdk_kms::Client::new(&aws_config);
+        
+        // 获取公钥并计算地址
+        let public_key = client
+            .get_public_key()
+            .key_id(&config.key_id)
+            .send()
+            .await?;
+            
+        let address = derive_address_from_public_key(&public_key.public_key)?;
+        
+        Ok(Self {
+            client,
+            key_id: config.key_id.clone(),
+            address,
+            config,
+        })
+    }
+}
+
+#[async_trait]
+impl PaymasterSigner for AWSKMSSigner {
+    async fn sign_user_operation_hash(
+        &self,
+        hash: &H256,
+        context: &SigningContext,
+    ) -> Result<Signature, SigningError> {
+        let request = self.client
+            .sign()
+            .key_id(&self.key_id)
+            .message(hash.as_bytes())
+            .message_type(aws_sdk_kms::types::MessageType::Digest)
+            .signing_algorithm(
+                aws_sdk_kms::types::SigningAlgorithmSpec::EcdsaSha256
+            );
+        
+        let response = request.send().await
+            .map_err(|e| SigningError::ServiceUnavailable {
+                service: format!("AWS KMS: {}", e),
+            })?;
+        
+        let signature_bytes = response.signature()
+            .ok_or(SigningError::InvalidParameters {
+                details: "Empty signature from AWS KMS".to_string(),
+            })?;
+        
+        // 转换 DER 格式签名为 Ethereum 格式
+        let signature = convert_der_to_ethereum_signature(signature_bytes)?;
+        
+        Ok(signature)
+    }
+    
+    async fn get_address(&self) -> Result<Address, SigningError> {
+        Ok(self.address)
+    }
+    
+    async fn verify_capability(&self) -> Result<SignerCapability, SigningError> {
+        // 测试 KMS 连接
+        let _public_key = self.client
+            .get_public_key()
+            .key_id(&self.key_id)
+            .send()
+            .await
+            .map_err(|e| SigningError::ServiceUnavailable {
+                service: format!("AWS KMS health check failed: {}", e),
+            })?;
+        
+        Ok(SignerCapability {
+            can_sign: true,
+            max_concurrent_requests: Some(100), // AWS KMS 限制
+            estimated_latency_ms: 200,
+            supported_curves: vec![CurveType::Secp256k1],
+        })
+    }
+    
+    fn get_metadata(&self) -> SignerMetadata {
+        SignerMetadata {
+            name: "AWS KMS Signer".to_string(),
+            version: "1.0.0".to_string(),
+            provider: SignerProvider::AWSKMS,
+            security_level: SecurityLevel::Enterprise,
+            cost_per_signature: Some(0.03), // AWS KMS 定价
+        }
+    }
+}
+```
+
+#### 3.3 Cloudflare Secrets Store 签名器
 ```rust
 pub struct CloudflareSecretsSigner {
     client: CloudflareSecretsClient,
     secret_name: String,
     address: Address,
     config: CloudflareSecretsConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct CloudflareSecretsConfig {
+    pub account_id: String,
+    pub api_token: String,
+    pub secret_name: String,
+    pub cache_ttl_seconds: u64,
+    pub enable_local_cache: bool,
+}
+
+pub struct CloudflareSecretsClient {
+    http_client: reqwest::Client,
+    base_url: String,
+    api_token: String,
+    cache: Option<Arc<Mutex<LruCache<String, String>>>>,
+}
+
+impl CloudflareSecretsClient {
+    pub fn new(config: &CloudflareSecretsConfig) -> Self {
+        let cache = if config.enable_local_cache {
+            Some(Arc::new(Mutex::new(LruCache::new(100))))
+        } else {
+            None
+        };
+        
+        Self {
+            http_client: reqwest::Client::new(),
+            base_url: format!(
+                "https://api.cloudflare.com/client/v4/accounts/{}/secrets",
+                config.account_id
+            ),
+            api_token: config.api_token.clone(),
+            cache,
+        }
+    }
+    
+    pub async fn get_secret(&self, name: &str) -> Result<String, SigningError> {
+        // 检查缓存
+        if let Some(cache) = &self.cache {
+            if let Some(value) = cache.lock().await.get(name) {
+                return Ok(value.clone());
+            }
+        }
+        
+        // 从 Cloudflare API 获取
+        let response = self.http_client
+            .get(&format!("{}/{}", self.base_url, name))
+            .header("Authorization", format!("Bearer {}", self.api_token))
+            .send()
+            .await
+            .map_err(|e| SigningError::NetworkError {
+                error: e.to_string(),
+            })?;
+        
+        if !response.status().is_success() {
+            return Err(SigningError::ServiceUnavailable {
+                service: format!("Cloudflare Secrets API: {}", response.status()),
+            });
+        }
+        
+        let secret_data: CloudflareSecretResponse = response.json().await
+            .map_err(|e| SigningError::InvalidParameters {
+                details: format!("Failed to parse Cloudflare response: {}", e),
+            })?;
+        
+        let secret_value = secret_data.result.value;
+        
+        // 更新缓存
+        if let Some(cache) = &self.cache {
+            cache.lock().await.put(name.to_string(), secret_value.clone());
+        }
+        
+        Ok(secret_value)
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct CloudflareSecretResponse {
+    result: CloudflareSecret,
+}
+
+#[derive(serde::Deserialize)]
+struct CloudflareSecret {
+    name: String,
+    value: String,
+}
+
+impl CloudflareSecretsSigner {
+    pub async fn new(config: CloudflareSecretsConfig) -> Result<Self, SigningError> {
+        let client = CloudflareSecretsClient::new(&config);
+        
+        // 获取私钥
+        let private_key_hex = client.get_secret(&config.secret_name).await?;
+        let private_key = SecretKey::from_str(&private_key_hex)?;
+        let address = Address::from_private_key(&private_key)?;
+        
+        Ok(Self {
+            client,
+            secret_name: config.secret_name.clone(),
+            address,
+            config,
+        })
+    }
 }
 
 #[async_trait]
@@ -895,171 +574,492 @@ impl PaymasterSigner for CloudflareSecretsSigner {
         hash: &H256,
         _context: &SigningContext,
     ) -> Result<Signature, SigningError> {
+        // 获取私钥（可能来自缓存）
         let private_key_hex = self.client.get_secret(&self.secret_name).await?;
         let private_key = SecretKey::from_str(&private_key_hex)?;
+        
         let signature = private_key.sign_hash(hash)?;
         Ok(signature)
     }
-
+    
     async fn get_address(&self) -> Result<Address, SigningError> {
         Ok(self.address)
     }
-
+    
     async fn verify_capability(&self) -> Result<SignerCapability, SigningError> {
+        // 测试 Cloudflare Secrets API 连接
         let _test = self.client.get_secret(&self.secret_name).await?;
+        
         Ok(SignerCapability {
             can_sign: true,
             max_concurrent_requests: Some(500),
-            estimated_latency_ms: 50,
+            estimated_latency_ms: 50, // 边缘网络优势
             supported_curves: vec![CurveType::Secp256k1],
         })
     }
-
+    
     fn get_metadata(&self) -> SignerMetadata {
         SignerMetadata {
             name: "Cloudflare Secrets Signer".to_string(),
             version: "1.0.0".to_string(),
             provider: SignerProvider::CloudflareSecrets,
             security_level: SecurityLevel::Production,
-            cost_per_signature: Some(0.001),
+            cost_per_signature: Some(0.001), // 边缘计算成本
         }
     }
 }
 ```
 
-## Rust 实现架构
+#### 3.4 Cloudflare Keyless SSL 签名器
+```rust
+pub struct CloudflareKeylessSigner {
+    tunnel_client: KeylessTunnelClient,
+    key_server_config: KeyServerConfig,
+    address: Address,
+    config: CloudflareKeylessConfig,
+}
 
-### 1. 项目结构
+#[derive(Debug, Clone)]
+pub struct CloudflareKeylessConfig {
+    pub tunnel_url: String,
+    pub tunnel_token: String,
+    pub key_id: String,
+    pub key_server_endpoint: String,
+    pub timeout_seconds: u64,
+    pub max_retry_attempts: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct KeyServerConfig {
+    pub endpoint: String,
+    pub auth_token: String,
+    pub key_id: String,
+    pub algorithm: String,
+}
+
+pub struct KeylessTunnelClient {
+    http_client: reqwest::Client,
+    tunnel_url: String,
+    tunnel_token: String,
+    timeout: Duration,
+}
+
+impl KeylessTunnelClient {
+    pub fn new(config: &CloudflareKeylessConfig) -> Self {
+        Self {
+            http_client: reqwest::Client::builder()
+                .timeout(Duration::from_secs(config.timeout_seconds))
+                .build()
+                .unwrap(),
+            tunnel_url: config.tunnel_url.clone(),
+            tunnel_token: config.tunnel_token.clone(),
+            timeout: Duration::from_secs(config.timeout_seconds),
+        }
+    }
+    
+    pub async fn request_signature(
+        &self,
+        hash: &H256,
+        key_id: &str,
+    ) -> Result<KeylessSignatureResponse, SigningError> {
+        let request = KeylessSignatureRequest {
+            algorithm: "ECDSA_SHA256".to_string(),
+            data: base64::encode(hash.as_bytes()),
+            key_id: key_id.to_string(),
+        };
+        
+        let response = self.http_client
+            .post(&format!("{}/sign", self.tunnel_url))
+            .header("Authorization", format!("Bearer {}", self.tunnel_token))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| SigningError::NetworkError {
+                error: format!("Keyless tunnel request failed: {}", e),
+            })?;
+        
+        if !response.status().is_success() {
+            return Err(SigningError::ServiceUnavailable {
+                service: format!("Keyless key server: HTTP {}", response.status()),
+            });
+        }
+        
+        let signature_response: KeylessSignatureResponse = response.json().await
+            .map_err(|e| SigningError::InvalidParameters {
+                details: format!("Failed to parse keyless response: {}", e),
+            })?;
+        
+        Ok(signature_response)
+    }
+    
+    pub async fn health_check(&self, key_id: &str) -> Result<(), SigningError> {
+        let request = KeylessHealthCheckRequest {
+            key_id: key_id.to_string(),
+        };
+        
+        let response = self.http_client
+            .post(&format!("{}/health", self.tunnel_url))
+            .header("Authorization", format!("Bearer {}", self.tunnel_token))
+            .header("Content-Type", "application/json")
+            .json(&request)
+            .send()
+            .await
+            .map_err(|e| SigningError::NetworkError {
+                error: format!("Keyless health check failed: {}", e),
+            })?;
+        
+        if !response.status().is_success() {
+            return Err(SigningError::ServiceUnavailable {
+                service: format!("Keyless key server health check failed: HTTP {}", response.status()),
+            });
+        }
+        
+        Ok(())
+    }
+}
+
+#[derive(serde::Serialize)]
+struct KeylessSignatureRequest {
+    algorithm: String,
+    data: String, // base64 encoded hash
+    key_id: String,
+}
+
+#[derive(serde::Deserialize)]
+struct KeylessSignatureResponse {
+    signature: String, // base64 encoded signature
+    algorithm: String,
+    key_id: String,
+}
+
+#[derive(serde::Serialize)]
+struct KeylessHealthCheckRequest {
+    key_id: String,
+}
+
+impl CloudflareKeylessSigner {
+    pub async fn new(config: CloudflareKeylessConfig) -> Result<Self, SigningError> {
+        let tunnel_client = KeylessTunnelClient::new(&config);
+        
+        // 健康检查以验证连接
+        tunnel_client.health_check(&config.key_id).await?;
+        
+        // 获取公钥并计算地址（通过特殊的公钥请求）
+        let address = Self::get_public_key_address(&tunnel_client, &config.key_id).await?;
+        
+        Ok(Self {
+            tunnel_client,
+            key_server_config: KeyServerConfig {
+                endpoint: config.key_server_endpoint.clone(),
+                auth_token: config.tunnel_token.clone(),
+                key_id: config.key_id.clone(),
+                algorithm: "ECDSA_SHA256".to_string(),
+            },
+            address,
+            config,
+        })
+    }
+    
+    async fn get_public_key_address(
+        tunnel_client: &KeylessTunnelClient,
+        key_id: &str,
+    ) -> Result<Address, SigningError> {
+        // 这里需要实现从 keyless 服务器获取公钥的逻辑
+        // 实际实现中，可能需要在密钥服务器上提供一个获取公钥的端点
+        
+        // 临时实现：从配置中获取或通过其他方式确定地址
+        // 在实际部署中，这个地址应该在初始化时确定并保存
+        
+        // 示例：通过配置文件或环境变量获取
+        let address_str = std::env::var("KEYLESS_SIGNER_ADDRESS")
+            .map_err(|_| SigningError::ConfigurationError {
+                config: "KEYLESS_SIGNER_ADDRESS not found".to_string(),
+            })?;
+        
+        let address = Address::from_str(&address_str)
+            .map_err(|e| SigningError::ConfigurationError {
+                config: format!("Invalid keyless signer address: {}", e),
+            })?;
+        
+        Ok(address)
+    }
+}
+
+#[async_trait]
+impl PaymasterSigner for CloudflareKeylessSigner {
+    async fn sign_user_operation_hash(
+        &self,
+        hash: &H256,
+        context: &SigningContext,
+    ) -> Result<Signature, SigningError> {
+        let mut retry_count = 0;
+        let max_retries = self.config.max_retry_attempts;
+        
+        while retry_count <= max_retries {
+            match self.tunnel_client.request_signature(hash, &self.config.key_id).await {
+                Ok(signature_response) => {
+                    // 解码 base64 签名
+                    let signature_bytes = base64::decode(&signature_response.signature)
+                        .map_err(|e| SigningError::InvalidParameters {
+                            details: format!("Invalid base64 signature: {}", e),
+                        })?;
+                    
+                    // 转换为 Ethereum 签名格式
+                    let signature = convert_keyless_signature_to_ethereum(&signature_bytes)?;
+                    
+                    return Ok(signature);
+                }
+                Err(e) if retry_count < max_retries => {
+                    retry_count += 1;
+                    tracing::warn!(
+                        "Keyless signature attempt {} failed: {}, retrying...", 
+                        retry_count, e
+                    );
+                    
+                    // 指数退避
+                    let delay = Duration::from_millis(100 * (1 << retry_count));
+                    tokio::time::sleep(delay).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        
+        Err(SigningError::ServiceUnavailable {
+            service: format!("Keyless signing failed after {} retries", max_retries),
+        })
+    }
+    
+    async fn get_address(&self) -> Result<Address, SigningError> {
+        Ok(self.address)
+    }
+    
+    async fn verify_capability(&self) -> Result<SignerCapability, SigningError> {
+        // 执行健康检查
+        self.tunnel_client.health_check(&self.config.key_id).await?;
+        
+        Ok(SignerCapability {
+            can_sign: true,
+            max_concurrent_requests: Some(50), // 受限于密钥服务器性能
+            estimated_latency_ms: 150, // 通过 tunnel 的额外延迟
+            supported_curves: vec![CurveType::Secp256k1],
+        })
+    }
+    
+    fn get_metadata(&self) -> SignerMetadata {
+        SignerMetadata {
+            name: "Cloudflare Keyless SSL Signer".to_string(),
+            version: "1.0.0".to_string(),
+            provider: SignerProvider::CloudflareKeyless,
+            security_level: SecurityLevel::Enterprise,
+            cost_per_signature: Some(0.01), // 考虑 tunnel 和服务器成本
+        }
+    }
+}
+
+// 辅助函数：转换 keyless 签名格式
+fn convert_keyless_signature_to_ethereum(
+    keyless_signature: &[u8],
+) -> Result<Signature, SigningError> {
+    // 这里需要根据密钥服务器返回的签名格式进行转换
+    // 通常 keyless 服务器返回的是 DER 格式的 ECDSA 签名
+    // 需要转换为 Ethereum 的 (r, s, v) 格式
+    
+    // 简化实现，实际需要根据具体的签名格式进行解析
+    if keyless_signature.len() < 64 {
+        return Err(SigningError::InvalidParameters {
+            details: "Keyless signature too short".to_string(),
+        });
+    }
+    
+    let r = H256::from_slice(&keyless_signature[0..32]);
+    let s = H256::from_slice(&keyless_signature[32..64]);
+    let v = if keyless_signature.len() > 64 {
+        keyless_signature[64]
+    } else {
+        27 // 默认值，实际应该通过恢复计算
+    };
+    
+    Ok(Signature { r, s, v })
+}
 ```
-relay-server/
-├── Cargo.toml
-├── src/
-│   ├── main.rs
-│   ├── lib.rs
-│   ├── api/
-│   │   ├── mod.rs
-│   │   ├── paymaster.rs
-│   │   ├── policies.rs
-│   │   └── health.rs
-│   ├── core/
-│   │   ├── mod.rs
-│   │   ├── paymaster.rs
-│   │   ├── policy_engine.rs
-│   │   ├── gas_estimator.rs
-│   │   └── relay_service.rs
-│   ├── blockchain/
-│   │   ├── mod.rs
-│   │   ├── client.rs
-│   │   └── contracts.rs
-│   ├── database/
-│   │   ├── mod.rs
-│   │   ├── models.rs
-│   │   └── repositories.rs
-│   ├── config/
-│   │   ├── mod.rs
-│   │   └── settings.rs
-│   └── utils/
-│       ├── mod.rs
-│       ├── crypto.rs
-│       └── validation.rs
-├── tests/
-└── docs/
+
+### 4. 签名器工厂和配置
+
+#### 4.1 签名器工厂
+```rust
+pub struct SignerFactory;
+
+impl SignerFactory {
+    pub async fn create_signer(
+        config: SignerConfig,
+    ) -> Result<Box<dyn PaymasterSigner>, SigningError> {
+        match config {
+            SignerConfig::Local(local_config) => {
+                let signer = LocalKeySigner::from_private_key(&local_config.private_key)?;
+                Ok(Box::new(signer))
+            }
+            SignerConfig::AWSKMS(aws_config) => {
+                let signer = AWSKMSSigner::new(aws_config).await?;
+                Ok(Box::new(signer))
+            }
+            SignerConfig::CloudflareSecrets(cf_config) => {
+                let signer = CloudflareSecretsSigner::new(cf_config).await?;
+                Ok(Box::new(signer))
+            }
+            SignerConfig::CloudflareKeyless(keyless_config) => {
+                let signer = CloudflareKeylessSigner::new(keyless_config).await?;
+                Ok(Box::new(signer))
+            }
+            SignerConfig::HashiCorpVault(vault_config) => {
+                let signer = HashiCorpVaultSigner::new(vault_config).await?;
+                Ok(Box::new(signer))
+            }
+            SignerConfig::Custom(custom_config) => {
+                let signer = CustomKMSSigner::new(custom_config).await?;
+                Ok(Box::new(signer))
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(tag = "type")]
+pub enum SignerConfig {
+    #[serde(rename = "local")]
+    Local(LocalSignerConfig),
+    
+    #[serde(rename = "aws_kms")]
+    AWSKMS(AWSKMSConfig),
+    
+    #[serde(rename = "cloudflare_secrets")]
+    CloudflareSecrets(CloudflareSecretsConfig),
+    
+    #[serde(rename = "cloudflare_keyless")]
+    CloudflareKeyless(CloudflareKeylessConfig),
+    
+    #[serde(rename = "hashicorp_vault")]
+    HashiCorpVault(HashiCorpVaultConfig),
+    
+    #[serde(rename = "custom")]
+    Custom(CustomKMSConfig),
+}
 ```
 
-### 2. 核心依赖（精简原则）
-```toml
-[dependencies]
-# 核心必需（< 10 个）
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
-axum = "0.7"
-serde = { version = "1", features = ["derive"] }
-alloy = { version = "0.1", features = ["rpc", "provider-http"] }
-config = "0.14"
-anyhow = "1"
-
-# 按需可选
-sqlx = { version = "0.7", optional = true }
-redis = { version = "0.24", optional = true }
-tracing = { version = "0.1", optional = true }
-
-[features]
-default = []
-database = ["sqlx"]
-cache = ["redis"]
-monitoring = ["tracing", "metrics"]
-```
-
-### 3. 模块化配置
+#### 4.2 配置文件示例
 ```yaml
-# config/modules.yaml
-pipeline:
-  modules:
-    - name: "sbt_validator"
-      enabled: true
-      config:
-        supported_contracts:
-          - "0x1234...SBT1"
-          - "0x5678...SBT2"
-        required_types: ["identity"]
-        cache_ttl: 300
-
-    - name: "pnt_balance_validator"
-      enabled: true
-      config:
-        contract_address: "0xabcd...PNT"
-        min_balance: "100000000000000000000"
-        include_staked: true
-
-    - name: "security_filter"
-      enabled: true
-      config:
-        risk_threshold: 70
-        providers: ["chainabuse", "forta"]
-        blacklist_contracts:
-          - "0xbad1...SCAM"
-
-    - name: "paymaster_signer"
-      enabled: true
-      config:
-        signer_type: "cloudflare_secrets"
-        cf_account_id: "${CF_ACCOUNT_ID}"
-        secret_name: "anode_paymaster_key"
+# config/signer.yaml
+signer:
+  # 开发环境 - 本地私钥
+  development:
+    type: "local"
+    private_key: "0x1234567890abcdef..."
+    enable_key_rotation: false
+    
+  # 测试环境 - Cloudflare Secrets
+  testing:
+    type: "cloudflare_secrets"
+    account_id: "your-cloudflare-account-id"
+    api_token: "${CLOUDFLARE_API_TOKEN}"
+    secret_name: "PAYMASTER_PRIVATE_KEY_TEST"
+    cache_ttl_seconds: 300
+    enable_local_cache: true
+    
+  # 预生产环境 - AWS KMS
+  staging:
+    type: "aws_kms"
+    region: "us-west-2"
+    key_id: "arn:aws:kms:us-west-2:123456789012:key/staging-key"
+    signing_algorithm: "ECDSA_SHA_256"
+    max_retry_attempts: 3
+    timeout_seconds: 10
+    
+  # 生产环境 - AWS KMS
+  production:
+    type: "aws_kms"
+    region: "us-west-2"
+    key_id: "arn:aws:kms:us-west-2:123456789012:key/production-key"
+    signing_algorithm: "ECDSA_SHA_256"
+    max_retry_attempts: 5
+    timeout_seconds: 30
+    
+  # 企业环境 - Cloudflare Keyless SSL
+  enterprise:
+    type: "cloudflare_keyless"
+    tunnel_url: "https://keyless-tunnel.company.com"
+    tunnel_token: "${CLOUDFLARE_TUNNEL_TOKEN}"
+    key_id: "paymaster-key-001"
+    key_server_endpoint: "https://keyserver.company.com"
+    timeout_seconds: 30
+    max_retry_attempts: 3
+    
+  # 高安全环境 - HashiCorp Vault
+  high_security:
+    type: "hashicorp_vault"
+    vault_url: "https://vault.company.com"
+    auth_method: "kubernetes"
+    mount_path: "transit"
+    key_name: "paymaster-signing-key"
+    role: "paymaster-service"
 ```
 
-## 部署架构
+### 5. 签名器管理和监控
 
-### 1. Cloudflare Workers 优先
-```yaml
-deployment:
-  primary: Cloudflare Workers
-  backup: AWS Lambda
-  storage: Cloudflare KV + D1
-  monitoring: Cloudflare Analytics
-```
+#### 5.1 签名器管理器
+```rust
+pub struct SignerManager {
+    primary_signer: Box<dyn PaymasterSigner>,
+    backup_signers: Vec<Box<dyn PaymasterSigner>>,
+    health_checker: SignerHealthChecker,
+    metrics: Arc<SignerMetrics>,
+}
 
-### 2. 多云部署
-```yaml
-deployment:
-  edge: Cloudflare Workers (API Layer)
-  compute: AWS ECS/EKS (BLS Aggregation)
-  secure: AWS Nitro Enclaves (TEE)
-  storage: AWS RDS + DynamoDB
-  monitoring: CloudWatch + Datadog
-```
-
-## 总结
-
-aNode Framework and Paymaster Module Design 提供了：
-
-1. **完整的 ERC-4337 集成**：从用户意图到链上执行的全流程支持
-2. **可插拔模块化架构**：SBT 验证、PNT 验证、安全过滤、策略引擎、签名器
-3. **多协议 API 支持**：RESTful + JSON-RPC，支持多种客户端
-4. **可插拔签名机制**：本地密钥到企业级 KMS 的平滑迁移
-5. **精简高效实现**：最小化依赖，按需启用功能
-6. **安全优先设计**：多层验证、风险评估、用户确认机制
-7. **扩展性保证**：预留 bundler 集成和其他 Phase 扩展接口
-
-这个设计完全融合了我们之前讨论的所有技术架构，为 aNode 提供了从 paymaster 服务到完整账户抽象生态的坚实基础。
+impl SignerManager {
+    pub async fn new(
+        primary_config: SignerConfig,
+        backup_configs: Vec<SignerConfig>,
+    ) -> Result<Self, SigningError> {
+        let primary_signer = SignerFactory::create_signer(primary_config).await?;
+        
+        let mut backup_signers = Vec::new();
+        for config in backup_configs {
+            let signer = SignerFactory::create_signer(config).await?;
+            backup_signers.push(signer);
+        }
+        
+        Ok(Self {
+            primary_signer,
+            backup_signers,
+            health_checker: SignerHealthChecker::new(),
+            metrics: Arc::new(SignerMetrics::new()),
+        })
+    }
+    
+    pub async fn sign_with_fallback(
+        &self,
+        hash: &H256,
+        context: &SigningContext,
+    ) -> Result<Signature, SigningError> {
+        // 尝试主签名器
+        match self.primary_signer.sign_user_operation_hash(hash, context).await {
+            Ok(signature) => {
+                self.metrics.record_signature_success("primary").await;
+                return Ok(signature);
+            }
+            Err(e) => {
+                self.metrics.record_signature_failure("primary", &e).await;
+                tracing::warn!("Primary signer failed: {}, trying backup signers", e);
+            }
+        }
+        
+        // 尝试备份签名器
+        for (index, backup_signer) in self.backup_signers.iter().enumerate() {
+            match backup_signer.sign_user_operation_hash(hash, context).await {
+                Ok(signature) => {
+                    self.metrics.record_signature_success(&format!("backup_{}", index)).await;
+                    return Ok(signature);
+                }
+                Err(e) => {
                     self.metrics.record_signature_failure(&format!("backup_{}", index), &e).await;
                     tracing::warn!("Backup signer {} failed: {}", index, e);
                 }
