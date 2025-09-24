@@ -68,6 +68,7 @@ Complete documentation for the aNode Rust paymaster service (Cloudflare Workers)
 - **[dev-guide.md](docs/aNode-rust/dev-guide.md)** - Comprehensive development guide with dual-version strategy, API specifications, and deployment instructions
 - **[rust-cloudflare.md](docs/aNode-rust/rust-cloudflare.md)** - Complete guide for Rust Cloudflare Workers development, deployment, and testing
 - **[RustWorkerCompatibility.md](docs/aNode-rust/RustWorkerCompatibility.md)** - Analysis of Rust Cloudflare Worker compatibility issues and solutions
+- **[account-abstraction-reference.md](docs/aNode-rust/account-abstraction-reference.md)** - Official ERC-4337 implementation reference with EntryPoint, paymaster, and stake system details
 
 ### 📁 docs/ - Web Application & General Documentation
 Documentation for web application and general project information:
