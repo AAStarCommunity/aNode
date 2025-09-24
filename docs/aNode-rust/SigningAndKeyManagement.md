@@ -1,503 +1,503 @@
-# aNode Framework and Paymaster Module Design
+# aNode
+aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
 
-## 项目概述
+- ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
+- ERC-20 PNTs and Community customized ERC-20 gas token support
+- Self-running paymaster support with SuperPaymaster relay and contract(if you want publish your ERC-20 gas token)
+- Entrypoint V06 support
+- Entrypoint V07, V08 is working on (inlude EIP-7704, EOA delegation)
 
-aNode 是一个精简、高效的 ERC-4337 paymaster 服务器，借鉴 ZeroDev 的成熟设计模式，扩展了传统 paymaster 的服务范围。我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 bundler 模块预留标准接口。
+Just send me useroperation!
 
-## 核心架构理念
+## Phase design
+1. Phase 1: a off-chain **paymaster** signature node, working with on-chain contract.
+  - sign after verify the useroperation and sender account SBT and PNTs balance
+  - contract invoke by Entrypoint(validatePaymasterSignaure)
+  - contract set and change different public key on-chain contract by owner
+2. Phase 2: a passkey signature **validator**
+  - invoked by outer aNode to verify it is user's will, returen a aNode BLS signature aggregation
+  - if the BLS collection is enough, act as a sender, send to bundler RPC
+  - will be changed for PQC
+3. Phase 3: hardware dependent, **account manager** with TEE security guarantee
+  - support web interface for account life management(many details)
+  - support RPC API for KMS service
+4. Phase 4: **Guardian** as social recovery and deadman's switch and more security service
+  - join gourp weight for multi signature on creating AA account
+  - verify special useroperation for changing the private key, by social verifications, not onchain
+  - provide signature to confirm the special useroperation
+  - the last guardian will submit to bundler if signature is enough
+  - will change to Hash algorithm cause of Post Quantumn Computing
 
-### 1. 可插拔模块化设计 (Pluggable Modular Architecture)
 
-aNode 采用管道式的模块化架构，每个模块负责特定的验证或处理功能，支持动态配置和扩展：
+## On chain contract
+We use pimlico singliton paymaster contract as initial version, thanks for their love and contribution.
+It act as onchain deposit account to Entrypoint, and a manageable public key to verify off chain signature.
+Entrypoint will invoke it's function to verify.
+It must register to SuperPaymaster to join the OpenPNTs and OpenCards and more protocols to use infras.
+We provide a 5-minutes guidance to do this.
 
-```mermaid
-graph LR
-    Input[UserOperation Input] --> Validator1[SBT Validator]
-    Validator1 --> Validator2[PNT Balance Validator]
-    Validator2 --> Validator3[Security Filter]
-    Validator3 --> ValidatorN[... Future Modules]
-    ValidatorN --> Paymaster[Paymaster Signer]
-    Paymaster --> Output[Signed UserOperation]
+## Off chain relay
+We use Rust to develop a new simple version, you can deploy it to Cloudflare with almost zero cost.
+We reference the Nodejs paymaster from ZeroDev, thanks for their contribution.
+It act as a off chain signer(can rotate) after verifying their pre-setting rules(like only support specific contract, specific ERC-20 and more).
 
-    Validator1 -.-> Error1[SBT Error + Alert]
-    Validator2 -.-> Error2[Balance Error + Alert]
-    Validator3 -.-> Error3[Security Warning + Confirmation]
+## Register on SuperPaymaster to run
+This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this).
+
+## Documentation Structure
+
+aNode maintains comprehensive documentation in the `docs/` directory:
+
+### 📁 [docs/aNode-rust/](docs/aNode-rust/) - aNode Rust Implementation
+Complete documentation for the aNode Rust paymaster service (Cloudflare Workers):
+
+#### Core Architecture Documents
+- **[aNodeFrameworkAndPaymasterModuleDesign.md](docs/aNode-rust/aNodeFrameworkAndPaymasterModuleDesign.md)** - Unified framework and paymaster module design, including ERC-4337 integration, modular architecture, and API interfaces
+- **[aNodeRoadmap.md](docs/aNode-rust/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
+- **[aNodeArchitectureDesign.md](docs/aNode-rust/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
+- **[ArchitecturalAnalysis.md](docs/aNode-rust/ArchitecturalAnalysis.md)** - Senior architect's perspective on aNode system design analysis
+
+#### Technical Implementation Documents
+- **[aNodeAPIDesign.md](docs/aNode-rust/aNodeAPIDesign.md)** - Multi-protocol API design (RESTful + JSON-RPC) with comprehensive endpoint specifications
+- **[aNodePolicySystem.md](docs/aNode-rust/aNodePolicySystem.md)** - Policy management system based on ZeroDev patterns with advanced rate limiting and rule engines
+- **[SigningAndKeyManagement.md](docs/aNode-rust/SigningAndKeyManagement.md)** - Pluggable signing mechanisms supporting Local, AWS KMS, Cloudflare Secrets, and Keyless SSL
+- **[ERC4337FlowDiagram.md](docs/aNode-rust/ERC4337FlowDiagram.md)** - Complete ERC-4337 flow integration with aNode enhancements
+- **[ModuleDesign.md](docs/aNode-rust/ModuleDesign.md)** - Detailed module architecture with internal call sequence diagrams
+
+#### Development Guides
+- **[dev-guide.md](docs/aNode-rust/dev-guide.md)** - Comprehensive development guide with dual-version strategy, API specifications, and deployment instructions
+- **[rust-cloudflare.md](docs/aNode-rust/rust-cloudflare.md)** - Complete guide for Rust Cloudflare Workers development, deployment, and testing
+- **[RustWorkerCompatibility.md](docs/aNode-rust/RustWorkerCompatibility.md)** - Analysis of Rust Cloudflare Worker compatibility issues and solutions
+- **[account-abstraction-reference.md](docs/aNode-rust/account-abstraction-reference.md)** - Official ERC-4337 implementation reference with EntryPoint, paymaster, and stake system details
+- **[ultra-relay-paymaster-integration.md](docs/aNode-rust/ultra-relay-paymaster-integration.md)** - Analysis of how Ultra-Relay integrates paymaster capabilities into bundler
+- **[bundler-architecture-knowledge.md](docs/aNode-rust/bundler-architecture-knowledge.md)** - Comprehensive bundler architecture guide based on Alto/Ultra-Relay analysis
+
+### 📁 docs/ - Web Application & General Documentation
+Documentation for web application and general project information:
+
+- **[ALCHEMY_ACCOUNT_KIT_LEARNING.md](docs/ALCHEMY_ACCOUNT_KIT_LEARNING.md)** - Alchemy Account Kit integration learning and examples
+- **[DEPLOY.md](docs/DEPLOY.md)** - Web application deployment guide
+- **[TEST_REPORT.md](docs/TEST_REPORT.md)** - Testing reports and Playwright test results
+- **[DetailedSystemDesign.md](docs/DetailedSystemDesign.md)** - Detailed system design specifications
+- **[ERC4337-AB-Test-Guide.md](docs/ERC4337-AB-Test-Guide.md)** - ERC-4337 Account Abstraction testing guide
+- **[setup-guide.md](docs/setup-guide.md)** - Development environment setup guide
+- **[README-test-accounts.md](docs/README-test-accounts.md)** - Test accounts and configuration guide
+- **[Changes.md](docs/Changes.md)** - Project change log and version history
+
+## Live Demo
+
+🚀 **aNode Paymaster Worker is now live on Cloudflare!**
+
+**Production URL**: https://anode-js-worker.jhfnetboy.workers.dev
+
+**Available Endpoints**:
+- `GET /` - Service information and documentation
+- `GET /health` - Health check endpoint
+- `POST /api/v1/paymaster/sponsor` - Gas sponsorship endpoint
+- `POST /api/v1/paymaster/process` - Full user operation processing with validation
+
+**Test the live service**:
+```bash
+# Health check
+curl https://anode-js-worker.jhfnetboy.workers.dev/health
+
+# Process a user operation
+curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/process \
+  -H "Content-Type: application/json"
 ```
 
-### 2. 标准化的输入输出接口
+### Worker Status
 
-**输入**：标准 ERC-4337 UserOperation
-```json
-{
-  "sender": "0x...",
-  "nonce": "0x...",
-  "initCode": "0x...",
-  "callData": "0x...",
-  "callGasLimit": "0x...",
-  "verificationGasLimit": "0x...",
-  "preVerificationGas": "0x...",
-  "maxFeePerGas": "0x...",
-  "maxPriorityFeePerGas": "0x...",
-  "paymasterAndData": "0x",
-  "signature": "0x..."
-}
+| Worker Type | Status | URL | Notes |
+|-------------|--------|-----|-------|
+| **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
+| **aNode Relay Server** | ✅ **Live** | https://anode-relay-server.jhfnetboy.workers.dev | aNode v0.01 - ERC-4337 Paymaster Service (Hello World) |
+| **Rust Demo Worker** | 🗑️ **Removed** | N/A | Was: Hello World demo (cleaned up to save space) |
+
+**Rust Worker 兼容性说明**:
+- 当前 wrangler 版本：4.38.0
+- Worker crate 兼容性：需要 wrangler 2.x 或 3.x 早期版本
+- 建议解决方案：使用 JavaScript Worker 或等待 Cloudflare 修复兼容性
+- 代码位置：`cloudflare-worker/` 和 `cloudflare-rust-simple/`
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/AAStarCommunity/aNode.git
+cd aNode
+
+# Install dependencies for web app
+cd web-app && pnpm install
+
+# Start development server
+pnpm run dev
+
+# Test Cloudflare Worker locally
+cd ../cloudflare-js-worker && wrangler dev --port 8788
+
+# For Rust paymaster server (future)
+cd ../relay-server && cargo build
 ```
 
-**输出**：加工后的 UserOperation 或标准化错误响应
+## Contributing
 
-## ERC-4337 完整流程集成
+1. Read the [aNode Roadmap](docs/aNodeRoadmap.md) to understand the project vision
+2. Review [Module Design](docs/ModuleDesign.md) for architecture guidelines
+3. Follow the [API Design](docs/aNodeAPIDesign.md) for interface specifications
+4. Check [Policy System](docs/aNodePolicySystem.md) for configuration patterns
 
-### aNode 在 ERC-4337 生态中的角色
+## License
 
-aNode 作为 ERC-4337 生态中的增强型 paymaster 节点，提供了从用户意图到链上执行的完整验证和签名服务。
+This project is licensed under the MIT License. 
 
-```mermaid
-sequenceDiagram
-    participant User as 👤 用户
-    participant DApp as 🌐 DApp
-    participant aNode as 🔒 aNode Paymaster
-    participant Bundler as 📦 Bundler
-    participant EntryPoint as ⛓️ EntryPoint Contract
-    participant PaymasterContract as 💰 Paymaster Contract
-    participant TargetContract as 🎯 Target Contract
 
-    %% 1. 用户意图发起
-    User->>DApp: 发起业务操作
-    DApp->>DApp: 构造 UserOperation
-
-    %% 2. aNode 验证流程
-    DApp->>aNode: 发送 UserOperation
-
-    Note over aNode: 多层验证流程
-    aNode->>aNode: SBT 验证
-    aNode->>aNode: PNT 余额验证
-    aNode->>aNode: 安全性检查
-    aNode->>aNode: 策略检查
-
-    alt 验证失败
-        aNode-->>DApp: ❌ 错误/安全预警
-        DApp-->>User: 显示警告
-        opt 用户确认
-            User->>DApp: 确认继续
-            DApp->>aNode: 重新提交
-        end
-    end
-
-    %% 3. 签名和提交
-    aNode->>aNode: 内置私钥签名
-    aNode->>DApp: ✅ 已签名 UserOperation
-    DApp->>Bundler: 提交到 Bundler
-
-    %% 4. 链上验证执行
-    Bundler->>EntryPoint: 提交 bundle
-    EntryPoint->>PaymasterContract: 验证签名
-    PaymasterContract-->>EntryPoint: ✅ 验证通过
-    EntryPoint->>EntryPoint: 扣除 gas 费用
-    EntryPoint->>TargetContract: 执行操作
-    TargetContract-->>EntryPoint: 返回结果
-
-    %% 5. 结果返回
-    EntryPoint-->>Bundler: 交易结果
-    Bundler-->>DApp: 交易哈希
-    DApp-->>User: 更新状态
-```
-
-### 核心增强特性
-
-1. **身份验证层**：基于 SBT 的身份准入机制
-2. **经济模型**：PNT 代币余额要求和质押机制
-3. **安全防护**：智能合约风险评估和分级警告
-4. **策略驱动**：灵活的 gas 策略和限制规则
-5. **用户体验**：友好的错误提示和确认流程
-
-## Paymaster 核心架构
-
-### 1. Paymaster 服务模式
-
-#### 1.1 Verifying Mode (Gas Sponsorship)
-**功能**：Paymaster 完全代付交易 gas 费用
-**适用场景**：免费试用、忠诚用户奖励、平台补贴
-**验证要求**：强签名验证，严格的策略控制
-
-#### 1.2 ERC-20 Mode (Token Payment)
-**功能**：用户使用 ERC-20 代币支付 gas
-**适用场景**：付费服务、商业应用
-**验证要求**：代币授权、余额检查、汇率转换
-
-### 2. 核心组件架构
-
-```mermaid
-graph TB
-    Client[Client Applications] --> API[REST API Layer]
-    API --> Auth[Authentication & Authorization]
-    API --> Router[Request Router]
-
-    Router --> PaymasterCore[Paymaster Core Service]
-    Router --> PolicyEngine[Policy Engine]
-    Router --> GasEstimator[Gas Estimation Service]
-    Router --> RelayService[Relay Service]
-
-    PaymasterCore --> ChainClient[Blockchain Client]
-    PaymasterCore --> Database[(Database)]
-
-    PolicyEngine --> RateLimit[Rate Limiting]
-    PolicyEngine --> GasPolicy[Gas Policies]
-    PolicyEngine --> Whitelist[Contract/Address Whitelist]
-
-    GasEstimator --> PriceOracle[Gas Price Oracle]
-    GasEstimator --> TokenPricing[ERC20 Token Pricing]
-
-    RelayService --> Bundler[Bundler Integration]
-    RelayService --> Mempool[UserOp Mempool]
-```
-
-### 3. 核心能力
-
-#### 3.1 Gas Sponsorship Service
-**主要功能**：根据可配置策略为用户操作赞助 gas 费用
-
-**关键特性**：
-- 赞助前验证用户操作
-- 应用 gas 策略（速率限制、消费上限、白名单）
-- 为赞助操作生成 paymaster 签名
-- 支持多种赞助模式（免费、ERC20 支付、订阅制）
-
-#### 3.2 ERC20 Paymaster Service
-**主要功能**：允许用户使用 ERC20 代币而不是原生 ETH 支付 gas 费用
-
-**关键特性**：
-- 支持多种 ERC20 代币（USDC、USDT、自定义代币）
-- 实时代币价格转换
-- 代币授权验证
-- 可配置加价的汇率管理
-
-#### 3.3 Policy Engine
-**主要功能**：对 gas 赞助策略执行精细控制
-
-**策略类型**：
-- **Project Policies**：整个项目的全局限制
-- **Contract Policies**：特定合约的限制
-- **Wallet Policies**：特定钱包地址的限制
-- **Custom Policies**：基于 webhook 的自定义验证逻辑
-
-**速率限制类型**：
-- **Amount Limits**：时间段内的最大 gas 金额
-- **Request Limits**：时间段内的最大请求数量
-- **Gas Price Limits**：仅在 gas 价格低于阈值时赞助
-- **Per-Transaction Limits**：单笔交易的最大 gas 金额
-
-#### 3.4 Gas Estimation Service
-**主要功能**：提供原生代币和 ERC20 代币的准确 gas 成本估算
-
-**关键特性**：
-- 多链 gas 价格预言机集成
-- ERC20 代币价格 feeds
-- 基于网络状况的动态 gas 估算
-- 批量交易的估算
-
-#### 3.5 Relay Service (UltraRelay Compatible)
-**主要功能**：使用组合的 bundler 和 paymaster 功能优化交易中继
-
-**关键特性**：
-- 相比标准 ERC-4337 bundler 减少 30% gas 消耗
-- 比传统 bundler 降低 20% 延迟
-- 直接 mempool 集成
-- 优化的 UserOp 批量处理
-
-## API 接口体系
-
-### 1. 核心 Paymaster APIs
-
-#### 1.1 Sponsor User Operation
-```http
-POST /api/v1/paymaster/sponsor
-Content-Type: application/json
-Authorization: Bearer <API_KEY>
-
-{
-  "userOperation": {
-    "sender": "0x742d35Cc6634C0532925a3b8D2C8f93c2b8D8f93c2",
-    "nonce": "0x0",
-    "initCode": "0x",
-    "callData": "0x...",
-    "callGasLimit": "0x186a0",
-    "verificationGasLimit": "0x186a0",
-    "preVerificationGas": "0x5208",
-    "maxFeePerGas": "0x4a817c800",
-    "maxPriorityFeePerGas": "0x3b9aca00",
-    "paymasterAndData": "0x",
-    "signature": "0x..."
-  },
-  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-  "chainId": 1,
-  "context": {
-    "type": "sponsor"
+  } else {
+    await this.rejectUserOp(error.userOp, error.reason)
   }
 }
 ```
 
-**成功响应**：
-```json
-{
-  "paymasterAndData": "0x1234567890abcdef...",
-  "preVerificationGas": "0x5208",
-  "verificationGasLimit": "0x186a0",
-  "callGasLimit": "0x186a0",
-  "maxFeePerGas": "0x4a817c800",
-  "maxPriorityFeePerGas": "0x3b9aca00"
-}
-```
+## 性能优化技术
 
-#### 1.2 ERC20 Gas Payment
-```http
-POST /api/v1/paymaster/erc20
-Content-Type: application/json
-Authorization: Bearer <API_KEY>
+### 1. 批量处理 (Bundling)
 
-{
-  "userOperation": { ... },
-  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-  "chainId": 1,
-  "context": {
-    "type": "erc20",
-    "token": "0xA0b86a33E6441c8C0c45F2d7a6c6e5B8E6A8C8D2",
-    "maxTokenAmount": "1000000"
-  }
-}
-```
+**核心策略**:
+- 多个 UserOperation 合并为单个交易
+- 减少交易费用和网络开销
+- 优化 gas 使用效率
 
-#### 1.3 Gas Estimation
-```http
-POST /api/v1/paymaster/estimate
-Content-Type: application/json
+```typescript
+class BundleManager {
+  private maxBundleSize = 10
+  private maxBundleDelay = 10000 // 10 秒
 
-{
-  "userOperation": { ... },
-  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-  "chainId": 1,
-  "context": {
-    "token": "0xA0b86a33E6441c8C0c45F2d7a6c6e5B8E6A8C8D2" // 可选，用于 ERC20 估算
-  }
-}
-```
+  async createBundle(userOps: UserOperation[]): Promise<Bundle> {
+    // 1. 按 gas 价格排序
+    const sortedOps = sortByGasPrice(userOps)
 
-**响应**：
-```json
-{
-  "gasEstimate": {
-    "callGasLimit": "0x186a0",
-    "verificationGasLimit": "0x186a0",
-    "preVerificationGas": "0x5208",
-    "maxFeePerGas": "0x4a817c800",
-    "maxPriorityFeePerGas": "0x3b9aca00",
-    "totalGasCost": "0x2386f26fc10000",
-    "tokenAmount": "5000000" // 如果指定了 token
-  }
-}
-```
+    // 2. 计算最优批次大小
+    const bundleSize = Math.min(sortedOps.length, this.maxBundleSize)
 
-### 2. aNode 扩展 APIs
+    // 3. 估算总 gas
+    const totalGas = await estimateBundleGas(sortedOps.slice(0, bundleSize))
 
-#### 2.1 SBT 验证接口
-```http
-GET /api/v1/validation/sbt/{address}
-```
-
-**响应**：
-```json
-{
-  "address": "0x742d35Cc6634C0532925a3b8D2C8f93c2b8D8f93c2",
-  "sbtValidation": {
-    "isValid": true,
-    "sbtTokens": [
-      {
-        "contract": "0x1234...SBT1",
-        "tokenId": "123",
-        "type": "identity",
-        "issuedAt": "2024-01-15T10:30:00Z",
-        "expiresAt": null,
-        "metadata": {
-          "name": "Verified Identity",
-          "level": "basic"
-        }
-      }
-    ],
-    "requiredTypes": ["identity"],
-    "missingTypes": []
-  }
-}
-```
-
-#### 2.2 PNT 余额验证接口
-```http
-GET /api/v1/validation/pnt/{address}
-```
-
-**响应**：
-```json
-{
-  "address": "0x742d35Cc6634C0532925a3b8D2C8f93c2b8D8f93c2",
-  "pntValidation": {
-    "isValid": true,
-    "balance": {
-      "available": "250000000000000000000", // 250 PNT
-      "staked": "100000000000000000000",    // 100 PNT
-      "locked": "50000000000000000000",     // 50 PNT
-      "total": "400000000000000000000"      // 400 PNT
-    },
-    "requirements": {
-      "minRequired": "100000000000000000000", // 100 PNT
-      "satisfied": true
+    return {
+      userOps: sortedOps.slice(0, bundleSize),
+      totalGas,
+      expectedProfit: calculateProfit(totalGas, sortedOps)
     }
   }
 }
 ```
 
-#### 2.3 安全风险评估接口
-```http
-POST /api/v1/security/assess
-Content-Type: application/json
+### 2. Gas 价格优化
 
-{
-  "userOperation": { ... },
-  "analysisDepth": "deep",
-  "includeRecommendations": true
+**动态 gas 价格策略**:
+
+```typescript
+interface GasPriceStrategy {
+  slow: bigint    // 慢速交易
+  standard: bigint // 标准交易
+  fast: bigint    // 快速交易
 }
-```
 
-**响应**：
-```json
-{
-  "securityAssessment": {
-    "riskLevel": "medium",
-    "riskScore": 65,
-    "targetContract": {
-      "address": "0x1234...CONTRACT",
-      "isVerified": false,
-      "deploymentAge": "2 hours"
-    },
-    "riskFactors": [
-      {
-        "type": "unverified_contract",
-        "severity": "medium",
-        "description": "Contract source code is not verified",
-        "weight": 30
-      }
-    ],
-    "recommendations": [
-      "Wait for contract verification before proceeding",
-      "Reduce transaction amount for initial interaction"
-    ]
+class GasPriceManager {
+  async getOptimalGasPrice(userOp: UserOperation): Promise<GasPriceStrategy> {
+    const networkConditions = await this.monitor.getNetworkConditions()
+    const userPreferences = this.extractUserPreferences(userOp)
+
+    return this.calculateStrategy(networkConditions, userPreferences)
   }
 }
 ```
 
-#### 2.4 综合处理接口（aNode 核心）
-```http
-POST /api/v1/paymaster/process
-Content-Type: application/json
-Authorization: Bearer <API_KEY>
+### 3. 内存池优化
 
-{
-  "userOperation": { ... },
-  "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
-  "chainId": 1,
-  "context": {
-    "type": "sponsor",
-    "token": "0x...",
-    "skipSecurity": false,
-    "confirmationToken": null
+**优先级队列实现**:
+
+```typescript
+class PriorityMempool {
+  private queues: Map<Priority, UserOperation[]> = new Map()
+
+  add(userOp: UserOperation) {
+    const priority = this.calculatePriority(userOp)
+    const queue = this.queues.get(priority) || []
+    queue.push(userOp)
+    this.queues.set(priority, queue)
   }
-}
-```
 
-**成功响应**：
-```json
-{
-  "success": true,
-  "userOperation": { /* 已签名的 UserOperation */ },
-  "processing": {
-    "modules": [
-      {
-        "name": "sbt_validator",
-        "status": "passed",
-        "duration": "12ms"
-      },
-      {
-        "name": "pnt_balance_validator",
-        "status": "passed",
-        "duration": "8ms"
-      },
-      {
-        "name": "security_filter",
-        "status": "passed",
-        "duration": "45ms"
-      },
-      {
-        "name": "paymaster_signer",
-        "status": "passed",
-        "duration": "15ms"
-      }
-    ],
-    "totalDuration": "80ms"
-  },
-  "gasEstimate": {
-    "totalCost": "0x2386f26fc10000",
-    "breakdown": { /* gas 分解 */ }
-  }
-}
-```
-
-**需要确认的响应**：
-```json
-{
-  "success": false,
-  "requiresConfirmation": true,
-  "confirmationToken": "confirm_abc123def456",
-  "securityWarning": {
-    "level": "warning",
-    "title": "Security Risk Detected",
-    "message": "The target contract has not been verified and was deployed recently",
-    "riskScore": 65,
-    "riskFactors": [
-      "Unverified contract source code",
-      "Deployed less than 24 hours ago"
-    ],
-    "recommendations": [
-      "Wait for contract verification",
-      "Reduce transaction amount"
-    ],
-    "actions": {
-      "proceed": {
-        "endpoint": "/api/v1/paymaster/process",
-        "method": "POST",
-        "body": "Same request with confirmationToken"
-      },
-      "cancel": {
-        "message": "Transaction cancelled for security reasons"
+  getNextBatch(): UserOperation[] {
+    // 按优先级返回操作批次
+    for (const [priority, queue] of this.queues) {
+      if (queue.length > 0) {
+        return queue.splice(0, BATCH_SIZE)
       }
     }
+    return []
   }
 }
 ```
 
-### 3. 策略管理 APIs
+## 安全和可靠性
 
-#### 3.1 创建 Gas 策略
-```http
-POST /api/v1/policies
-Content-Type: application/json
-Authorization: Bearer <ADMIN_API_KEY>
+### 1. 声誉系统 (Reputation System)
 
-{
-  "name": "Contract Limit Policy",
-  "type": "contract",
-  "target": "0x...", // 合约地址
-  "enabled": true,
-  "priority": 20,
-  "rateLimits": [
-    {
-      "type": "amount",
+**目的**: 防止恶意用户滥用系统
+
+```typescript
+interface ReputationEntry {
+  address: Address
+  stake: bigint
+  opsSeen: number
+  opsIncluded: number
+  status: 'ok' | 'throttled' | 'banned'
+}
+
+class ReputationManager {
+  // 跟踪实体的历史表现
+  updateReputation(address: Address, success: boolean) {
+    const entry = this.getEntry(address)
+    entry.opsSeen++
+
+    if (success) {
+      entry.opsIncluded++
+    }
+
+    this.updateStatus(entry)
+  }
+
+  // 基于声誉决定是否接受操作
+  shouldAccept(address: Address): boolean {
+    const entry = this.getEntry(address)
+    return entry.status !== 'banned' && this.hasMinimumStake(entry)
+  }
+}
+```
+
+### 2. 速率限制 (Rate Limiting)
+
+**防止 DoS 攻击**:
+
+```typescript
+class RateLimiter {
+  private attempts = new Map<Address, number[]>()
+
+  canProceed(address: Address): boolean {
+    const now = Date.now()
+    const window = now - RATE_LIMIT_WINDOW
+
+    // 清理过期记录
+    const userAttempts = this.attempts.get(address) || []
+    const recentAttempts = userAttempts.filter(time => time > window)
+
+    // 检查是否超过限制
+    if (recentAttempts.length >= MAX_ATTEMPTS) {
+      return false
+    }
+
+    // 记录新尝试
+    recentAttempts.push(now)
+    this.attempts.set(address, recentAttempts)
+
+    return true
+  }
+}
+```
+
+### 3. 状态同步和一致性
+
+**处理区块链重组**:
+
+```typescript
+class StateManager {
+  async handleReorg(newBlock: Block) {
+    // 1. 识别受影响的操作
+    const affectedOps = await this.findAffectedOps(newBlock)
+
+    // 2. 重新验证状态
+    for (const op of affectedOps) {
+      await this.revalidateOp(op)
+    }
+
+    // 3. 更新内存池
+    await this.updateMempool(affectedOps)
+  }
+}
+```
+
+## 多链支持架构
+
+### 网络抽象层
+
+**统一的链上接口**:
+
+```typescript
+interface ChainAdapter {
+  getChainId(): Promise<number>
+  estimateGas(userOp: UserOperation): Promise<GasEstimate>
+  submitBundle(bundle: Bundle): Promise<TransactionReceipt>
+  getBlockNumber(): Promise<number>
+  validateUserOp(userOp: UserOperation): Promise<ValidationResult>
+}
+
+class EthereumAdapter implements ChainAdapter {
+  // Ethereum 特定的实现
+}
+
+class PolygonAdapter implements ChainAdapter {
+  // Polygon 特定的实现
+}
+```
+
+### 跨链操作处理
+
+**EntryPoint 版本管理**:
+
+```typescript
+const ENTRYPOINT_VERSIONS = {
+  '0.6': {
+    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+    abi: EntryPointV06Abi
+  },
+  '0.7': {
+    address: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
+    abi: EntryPointV07Abi
+  }
+}
+
+class EntryPointManager {
+  getEntryPoint(chainId: number, version: string) {
+    const config = ENTRYPOINT_CONFIGS[chainId]?.[version]
+    if (!config) {
+      throw new Error(`Unsupported EntryPoint version ${version} on chain ${chainId}`)
+    }
+    return config
+  }
+}
+```
+
+## 监控和可观测性
+
+### 1. 指标收集 (Metrics)
+
+**关键指标**:
+
+```typescript
+interface BundlerMetrics {
+  // 操作处理指标
+  userOpsReceived: Counter
+  userOpsProcessed: Counter
+  userOpsFailed: Counter
+
+  // 性能指标
+  bundleProcessingTime: Histogram
+  gasPriceUpdates: Counter
+
+  // 错误指标
+  validationErrors: Counter
+  executionErrors: Counter
+  networkErrors: Counter
+
+  // 业务指标
+  totalGasSponsored: Counter
+  totalFeesCollected: Counter
+}
+```
+
+### 2. 日志系统 (Logging)
+
+**结构化日志**:
+
+```typescript
+interface LogEntry {
+  timestamp: Date
+  level: 'debug' | 'info' | 'warn' | 'error'
+  component: string
+  userOpHash?: Hex
+  message: string
+  metadata?: Record<string, any>
+}
+
+class Logger {
+  info(component: string, message: string, metadata?: any) {
+    console.log(JSON.stringify({
+      timestamp: new Date(),
+      level: 'info',
+      component,
+      message,
+      ...metadata
+    }))
+  }
+}
+```
+
+## aNode Bundler 设计指导
+
+### 1. 架构选择
+
+**推荐采用类似的模块化架构**:
+
+```
+aNode-bundler/
+├── src/
+│   ├── rpc/           # RPC 接口
+│   ├── mempool/       # 内存池
+│   ├── executor/      # 执行引擎
+│   ├── paymaster/     # Paymaster 集成
+│   ├── handlers/      # 处理器
+│   └── utils/         # 工具函数
+├── contracts/         # 链上合约
+├── test/             # 测试
+└── docs/            # 文档
+```
+
+### 2. 技术栈建议
+
+**核心技术栈**:
+- **语言**: TypeScript (类型安全，生态成熟)
+- **Web 框架**: Fastify (高性能，插件丰富)
+- **区块链**: Viem (现代，以太坊优先)
+- **数据库**: Redis (内存池) + PostgreSQL (持久化)
+- **监控**: Prometheus + Grafana
+
+### 3. 开发路线图
+
+#### Phase 1: 基础功能
+- [ ] RPC 接口实现
+- [ ] 基本的 UserOperation 处理
+- [ ] Gas 估算功能
+
+#### Phase 2: 高级功能
+- [ ] Mempool 管理
+- [ ] 批量打包优化
+- [ ] Paymaster 集成
+
+#### Phase 3: 生产就绪
+- [ ] 监控和日志
+- [ ] 错误处理和恢复
+- [ ] 性能优化
+
+#### Phase 4: 多链扩展
+- [ ] 多网络支持
+- [ ] 跨链操作
+- [ ] 统一接口
+
+## 总结
+
+基于 Alto 和 Ultra-Relay 的分析，现代 ERC-4337 bundler 的核心特征包括：
+
+1. **模块化架构**: 清晰的功能分离和职责划分
+2. **异步处理**: 基于事件驱动的高并发处理能力
+3. **性能优化**: 批量处理、gas 优化、智能路由
+4. **安全可靠**: 声誉系统、速率限制、状态一致性
+5. **可扩展性**: 多链支持、插件化架构
+
+这些设计原则为 aNode bundler 的开发提供了坚实的理论基础和实践指导。
+
+---
+
+*基于 Pimlico Alto 和 ZeroDev Ultra-Relay 架构分析*
       "limit": "1000000000000000000", // 1 ETH in wei
       "window": 3600, // 1 hour in seconds
       "enabled": true

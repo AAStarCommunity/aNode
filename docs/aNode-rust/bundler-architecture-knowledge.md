@@ -495,6 +495,254 @@ aNode-bundler/
 
 这些设计原则为 aNode bundler 的开发提供了坚实的理论基础和实践指导。
 
+## Rundler: Rust Bundler 架构深度分析
+
+### 概述
+
+**Rundler** 是 Alchemy 开发的纯 Rust ERC-4337 bundler 实现，与 Alto (TypeScript) 和 Ultra-Relay 相比，Rundler 提供了更好的性能、类型安全和内存效率。
+
+### 核心架构特点
+
+#### 1. Workspace 模块化设计
+
+Rundler 使用 Rust workspace 实现高度模块化：
+
+```
+rundler/
+├── bin/rundler/          # 主程序和 CLI
+├── crates/
+│   ├── pool/            # 内存池管理
+│   ├── builder/         # 打包和提交逻辑
+│   ├── rpc/             # JSON-RPC 接口
+│   ├── sim/             # 模拟验证引擎
+│   ├── provider/        # 区块链交互层
+│   ├── types/           # 类型定义和 trait
+│   ├── task/            # 异步任务管理
+│   ├── signer/          # 签名服务
+│   ├── utils/           # 工具函数
+│   └── contracts/       # Solidity 合约绑定
+```
+
+#### 2. 类型安全和泛型设计
+
+**EntryPoint 版本抽象**:
+```rust
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+pub enum EntryPointVersion {
+    Unspecified,
+    V0_6,  // EntryPoint 0.6
+    V0_7,  // EntryPoint 0.7
+}
+
+/// UserOperation trait for version abstraction
+pub trait UserOperation: Debug + Clone + Send + Sync + 'static {
+    type OptionalGas;
+    fn entry_point_version() -> EntryPointVersion;
+    fn entry_point(&self) -> Address;
+    // ... 其他方法
+}
+```
+
+**泛型约束确保类型安全**:
+```rust
+#[async_trait]
+pub trait BundleProposer: Send + Sync {
+    type UO: UserOperation;
+    // 方法使用泛型 UO 确保类型一致性
+}
+```
+
+#### 3. 高性能异步处理
+
+**Tokio 生态系统深度集成**:
+- `tokio::sync` 用于任务间通信
+- `futures` 用于异步组合
+- 自定义任务管理器优化并发
+
+**内存池实现**:
+```rust
+pub struct PoolInner<UO> {
+    // 使用 LinkedHashMap 保持插入顺序
+    by_id: LinkedHashMap<UserOperationId, OrderedPoolOperation<UO>>,
+    // 按实体分组以便快速查找
+    by_entity: HashMap<Entity, HashSet<UserOperationId>>,
+    // 按 gas 价格排序的优先队列
+    best: BTreeSet<PoolOperation<UO>>,
+}
+```
+
+#### 4. Bundle 构建算法
+
+**多阶段打包策略**:
+
+```rust
+pub struct BundleProposerImpl<UO> {
+    // 1. 候选选择阶段
+    async fn get_bundle_candidates(&self) -> Vec<PoolOperation<UO>>
+    
+    // 2. 组合并并阶段
+    async fn group_by_aggregator(&self, candidates: Vec<PoolOperation<UO>>) 
+        -> Vec<UserOpsPerAggregator<UO>>
+    
+    // 3. Gas 估算阶段
+    async fn estimate_bundle_gas(&self, bundle: &mut Bundle<UO>)
+    
+    // 4. 最终验证阶段
+    async fn validate_bundle(&self, bundle: Bundle<UO>) -> Result<Bundle<UO>, BundleProposerError>
+}
+```
+
+**智能 Gas 分配**:
+- 预估每个 UserOperation 的 gas 用量
+- 计算 bundle 总 gas 和共享开销
+- 根据优先级动态调整 gas 限制
+- 失败时自动重试和重新估算
+
+#### 5. 声誉和 throttling 系统
+
+**多层 throttling**:
+```rust
+pub struct ThrottlingService {
+    // 基于实体的 throttling
+    entity_limiter: RateLimiter<Entity>,
+    // 基于操作类型的 throttling  
+    op_type_limiter: HashMap<OpType, RateLimiter<OpType>>,
+    // 自适应 throttling 基于网络状况
+    adaptive_limiter: AdaptiveRateLimiter,
+}
+```
+
+**声誉评分算法**:
+```rust
+pub struct ReputationManager {
+    // 成功率计算
+    pub success_rate: f64 = (ops_included / ops_seen) as f64
+    
+    // 动态 throttling 阈值
+    pub throttle_threshold: f64 = match success_rate {
+        r if r > 0.95 => 1000,  // 高信誉，无限制
+        r if r > 0.80 => 100,   // 中等信誉，中等限制
+        r if r > 0.50 => 10,    // 低信誉，严格限制
+        _ => 1,                 // 极低信誉，几乎禁止
+    }
+}
+```
+
+#### 6. 错误处理和恢复
+
+**分层错误类型**:
+```rust
+#[derive(thiserror::Error, Debug)]
+pub enum BundlerError {
+    #[error("Pool error: {0}")]
+    Pool(#[from] PoolError),
+    
+    #[error("Builder error: {0}")]
+    Builder(#[from] BuilderError),
+    
+    #[error("Simulation error: {0}")]
+    Simulation(#[from] SimulationError),
+    
+    #[error("Provider error: {0}")]
+    Provider(#[from] ProviderError),
+}
+```
+
+**自动恢复机制**:
+- 网络错误自动重试
+- 状态不一致自动修复
+- Gas 估算失败降级处理
+- Bundle 提交失败重新打包
+
+#### 7. 监控和指标
+
+**丰富的指标收集**:
+```rust
+#[derive(Metrics)]
+pub struct BundlerMetrics {
+    // 操作处理指标
+    #[metric(describe = "Number of user operations received")]
+    user_ops_received: Counter,
+    
+    #[metric(describe = "Number of user operations processed")]
+    user_ops_processed: Counter,
+    
+    // 性能指标
+    #[metric(describe = "Bundle processing duration")]
+    bundle_processing_duration: Histogram,
+    
+    #[metric(describe = "Gas estimation accuracy")]
+    gas_estimation_accuracy: Histogram,
+    
+    // 错误指标
+    #[metric(describe = "Number of simulation failures")]
+    simulation_failures: Counter,
+    
+    #[metric(describe = "Number of bundle submission failures")]
+    bundle_submission_failures: Counter,
+}
+```
+
+### Rundler vs Alto/Ultra-Relay
+
+| 特性 | Rundler (Rust) | Alto/Ultra-Relay (TS) |
+|------|----------------|----------------------|
+| **语言** | Rust | TypeScript |
+| **性能** | 高 (编译时优化) | 中等 (JIT 优化) |
+| **内存使用** | 低 (零 GC) | 中等 (V8 GC) |
+| **类型安全** | 强 (编译时检查) | 中等 (运行时检查) |
+| **并发模型** | 异步运行时 | 事件循环 |
+| **部署方式** | 二进制可执行文件 | Node.js 应用 |
+| **生态集成** | Alloy/ethers-rs | Viem/ethers.js |
+
+### aNode Bundler 设计建议
+
+基于 Rundler 分析，推荐的架构设计：
+
+#### 1. 采用 Workspace 结构
+```
+aNode-bundler/
+├── bin/              # 主程序
+├── crates/
+│   ├── pool/        # 内存池
+│   ├── builder/     # 打包器
+│   ├── rpc/         # RPC 接口
+│   ├── sim/         # 模拟器
+│   ├── provider/    # 区块链接口
+│   └── types/       # 类型定义
+```
+
+#### 2. 类型安全优先
+- 使用 trait 和泛型抽象 EntryPoint 版本
+- 编译时类型检查确保接口一致性
+- 自定义错误类型提供精确错误处理
+
+#### 3. 高性能异步处理
+- Tokio 作为异步运行时
+- 消息传递而非共享内存
+- 连接池和缓存优化
+
+#### 4. 智能 Gas 管理
+- 多层 gas 估算策略
+- 自适应 gas 价格调整
+- Bundle 级别 gas 优化
+
+#### 5. 企业级可靠性
+- 结构化错误处理
+- 自动恢复机制
+- 详细的监控指标
+
+### 总结
+
+Rundler 作为纯 Rust ERC-4337 bundler 的代表作，展示了：
+
+1. **语言优势**: Rust 的性能、内存安全和类型安全
+2. **架构模式**: 高度模块化和类型驱动的设计
+3. **生产就绪**: 企业级的错误处理、监控和恢复机制
+4. **扩展性**: 通过 trait 和泛型支持多版本和多链
+
+这些经验为 aNode 的 Rust bundler 实现提供了宝贵的参考，既保持了高性能，又确保了可靠性和可维护性。
+
 ---
 
-*基于 Pimlico Alto 和 ZeroDev Ultra-Relay 架构分析*
+*基于 Pimlico Alto、ZeroDev Ultra-Relay 和 Alchemy Rundler 综合分析*
