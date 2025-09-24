@@ -1135,7 +1135,7 @@ contract PNTsGovernance {
 ### **Bundler 相关历史问题记录**
 
 #### **问题 1: Ultra-Relay 中 Relayer 直接赞助的工作机制**
-**用户问题**: "@ultra-relay-paymaster-integration.md 模式 B: Relayer 直接赞助,这里直接赞助如何实现的？不太明白这个链下链上逻辑，例如bundler自己的私钥提交useroperation给entrypoint，然后entrypoint直接扣除bundler在ep的存款余额么？如何告诉ep来完成这个逻辑，而不是从sender 或者owner address扣除eth 余额呢？ultrarelay如果不验证就赞助，那是不是采用的是链下结算的方式？就是哪个api key用了多少都记录，然后结算？你分析ultrarelay代码和aa官方代码repo（在vendor）以及 全网搜索确认下，然后和我讲下"
+**用户问题**: "@ultra-relay-paymaster-integration.md 模式 B: Relayer 直接赞助，这里直接赞助如何实现的？不太明白这个链下链上逻辑，例如 bundler 自己的私钥提交 useroperation 给 entrypoint，然后 entrypoint 直接扣除 bundler 在 ep 的存款余额么？如何告诉 ep 来完成这个逻辑，而不是从 sender 或者 owner address 扣除 eth 余额呢？ultrarelay 如果不验证就赞助，那是不是采用的是链下结算的方式？就是哪个 api key 用了多少都记录，然后结算？你分析 ultrarelay 代码和 aa 官方代码 repo（在 vendor）以及 全网搜索确认下，然后和我讲下"
 
 **核心疑惑**:
 - Bundler 如何用自己的私钥提交 UserOperation？
@@ -1143,7 +1143,7 @@ contract PNTsGovernance {
 - 是否采用链下结算模式？
 
 #### **问题 2: 智能账户赞助架构图设计需求**
-**用户问题**: "帮我画个架构图，设计思路是：对于合约账户，支持自付gas，支持指定paymaster，支持传统4337 paymastr流程，支持去中心paymaster流程。求分析和建议：其中的经济学思考：组成一个大社区，其中a社区提供gas sponsor服务（例如运行bundler，支付gas），这个服务可以去中心化加入，只要你stake足够的a社区PNTs，称为aPNTs；而b社区，c社区发现了bPNTs，cPNTs，如果你需要某社区服务，就要或者兑换，或者usdc购买，获得aPNTs并抵押，然后发布自己的链上合约，赞助所有持有自己社区代币的用户建议（如bPNTs，cPNTs），a，b，c之间价格可以波动。相互之间定价使用一个pool（假如有aPNTs，bPNTs, cPNTs三个），这个pool想借鉴哈耶克的货币非国家化的思路，请帮我设计和完善"
+**用户问题**: "帮我画个架构图，设计思路是：对于合约账户，支持自付 gas，支持指定 paymaster，支持传统 4337 paymastr 流程，支持去中心 paymaster 流程。求分析和建议：其中的经济学思考：组成一个大社区，其中 a 社区提供 gas sponsor 服务（例如运行 bundler，支付 gas），这个服务可以去中心化加入，只要你 stake 足够的 a 社区 PNTs，称为 aPNTs；而 b 社区，c 社区发现了 bPNTs，cPNTs，如果你需要某社区服务，就要或者兑换，或者 usdc 购买，获得 aPNTs 并抵押，然后发布自己的链上合约，赞助所有持有自己社区代币的用户建议（如 bPNTs，cPNTs），a，b，c 之间价格可以波动。相互之间定价使用一个 pool（假如有 aPNTs，bPNTs, cPNTs 三个），这个 pool 想借鉴哈耶克的货币非国家化的思路，请帮我设计和完善"
 
 **设计需求**:
 - 四种赞助模式架构图
@@ -1151,7 +1151,7 @@ contract PNTsGovernance {
 - 哈耶克式货币池设计
 
 #### **问题 3: 去中心化赞助系统的三大核心安全问题**
-**用户问题**: "1.如何确保bundler不会滥用或者做假账来调用结算合约扣除任何人的余额？2.结算合约是erc20在mint时指定了允许不用approve（因为已经预先工厂合约就内置了approve特定结算地址的代码）扣除任何拥有erc20，这部分如何结合bundler，考虑整体安全性？3.如果不需要paymaster链下签名，那是否就不需要链上paymaster合约了？针对本去中心化sponsor方案，因为不同的erc20赞助或者认可的token不同，，赞助策略不同，价格不同，是不是仍然需要一个合约来完成这些，本质上，结算最终是这些发行erc20的人支付cost，请帮我分析"
+**用户问题**: "1.如何确保 bundler 不会滥用或者做假账来调用结算合约扣除任何人的余额？2.结算合约是 erc20 在 mint 时指定了允许不用 approve（因为已经预先工厂合约就内置了 approve 特定结算地址的代码）扣除任何拥有 erc20，这部分如何结合 bundler，考虑整体安全性？3.如果不需要 paymaster 链下签名，那是否就不需要链上 paymaster 合约了？针对本去中心化 sponsor 方案，因为不同的 erc20 赞助或者认可的 token 不同，，赞助策略不同，价格不同，是不是仍然需要一个合约来完成这些，本质上，结算最终是这些发行 erc20 的人支付 cost，请帮我分析"
 
 **三大核心问题**:
 1. Bundler 滥用防护机制
