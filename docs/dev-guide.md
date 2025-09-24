@@ -81,7 +81,7 @@ aNode 采用 **JS 先行，Rust 对标** 的双版本并行开发策略，确保
 | 🧪 业务验证 | 先验证业务逻辑，再进行技术优化 |
 | 🔄 低风险迁移 | 功能对标迁移，降低切换风险 |
 | 💰 成本控制 | JS 原型验证，Rust 长期投资 |
-| 🎯 技术演进 | 从可用(MVP)到卓越的清晰路径 |
+| 🎯 技术演进 | 从可用 (MVP) 到卓越的清晰路径 |
 
 ## 项目结构
 
@@ -145,10 +145,10 @@ cargo run
 
 ### 测试策略
 
-- 单元测试: 核心业务逻辑
-- 集成测试: API 接口验证
-- E2E 测试: 完整用户流程
-- 性能测试: 压力和负载测试
+- 单元测试：核心业务逻辑
+- 集成测试：API 接口验证
+- E2E 测试：完整用户流程
+- 性能测试：压力和负载测试
 
 ## API 设计
 
@@ -299,6 +299,6 @@ wrangler tail
 
 ## 联系方式
 
-- 项目主页: https://github.com/AAStarCommunity/aNode
-- 问题反馈: GitHub Issues
-- 讨论交流: Discord/Telegram
+- 项目主页：https://github.com/AAStarCommunity/aNode
+- 问题反馈：GitHub Issues
+- 讨论交流：Discord/Telegram

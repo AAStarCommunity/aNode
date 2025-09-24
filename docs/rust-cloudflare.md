@@ -261,7 +261,7 @@ wrangler tail
 **测试响应**:
 ```bash
 curl https://anode-rust-demo.jhfnetboy.workers.dev/
-# 返回:
+# 返回：
 🌟 Hello World from Rust on Cloudflare Workers!
 
 📍 Request Details:
@@ -400,7 +400,7 @@ wrangler deploy
 **测试响应**:
 ```bash
 curl https://anode-relay-server.jhfnetboy.workers.dev/
-# 返回:
+# 返回：
 🚀 aNode Relay Server v0.0.1 - Hello World!
 
 📊 Server Information:
