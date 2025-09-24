@@ -100,8 +100,8 @@ curl -X POST https://anode-js-worker.jhfnetboy.workers.dev/api/v1/paymaster/proc
 | Worker Type | Status | URL | Notes |
 |-------------|--------|-----|-------|
 | **JavaScript Worker** | ✅ **Live** | https://anode-js-worker.jhfnetboy.workers.dev | Full ERC-4337 paymaster API |
-| **Rust Worker** | ✅ **Live** | https://anode-rust-demo.jhfnetboy.workers.dev | Hello World demo using official workers-rs template |
 | **aNode Relay Server** | ✅ **Live** | https://anode-relay-server.jhfnetboy.workers.dev | aNode v0.01 - ERC-4337 Paymaster Service (Hello World) |
+| **Rust Demo Worker** | 🗑️ **Removed** | N/A | Was: Hello World demo (cleaned up to save space) |
 
 **Rust Worker 兼容性说明**:
 - 当前 wrangler 版本: 4.38.0

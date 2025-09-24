@@ -1,9 +1,0 @@
-name = "anode-rust-demo"
-main = "build/worker/shim.mjs"
-compatibility_date = "2025-01-18"
-
-[build]
-command = "cargo install -q worker-build && worker-build --release"
-
-[vars]
-NODE_ENV = "production"
