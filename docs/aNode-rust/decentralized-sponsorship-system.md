@@ -21,6 +21,95 @@
 DAO治理 → 参数调整 → 社区监督 → 透明审计
 ```
 
+## 安全架构设计
+
+### 1. 多层验证体系
+
+#### **Bundler 信誉系统**
+```solidity
+contract BundlerRegistry {
+    struct BundlerInfo {
+        address bundler;
+        uint256 stakeAmount;      // 质押金额
+        uint256 reputationScore;  // 信誉分数
+        uint256 totalSponsored;   // 总赞助量
+        uint256 successfulSettlements; // 成功结算次数
+        bool isActive;
+    }
+
+    // 质押要求
+    uint256 public constant MIN_STAKE = 10 ether;
+
+    // 信誉阈值
+    uint256 public constant MIN_REPUTATION = 100;
+
+    function registerBundler() external payable {
+        require(msg.value >= MIN_STAKE, "Insufficient stake");
+        // 注册 bundler
+        // 初始化信誉分数
+    }
+
+    function slashBundler(address bundler, uint256 amount) external onlyDAO {
+        // 惩罚恶意 bundler
+        // 扣除质押金
+        // 降低信誉分数
+    }
+}
+```
+
+#### **赞助记录证明系统**
+```typescript
+class SponsorshipProof {
+    // 零知识证明: "用户有资格获得赞助且bundler正确记录"
+    generateProof(userOp: UserOperation, eligibility: EligibilityData): ZKProof {
+        // 证明用户拥有 NFT 和足够 ERC20
+        // 证明 bundler 正确记录了赞助数据
+        // 不泄露具体余额信息
+    }
+
+    verifyProof(proof: ZKProof): boolean {
+        // 验证证明有效性
+        // 确保 bundler 不能伪造记录
+    }
+}
+```
+
+### 2. 结算合约安全设计
+
+#### **权限分层架构**
+```solidity
+contract DecentralizedSponsorshipPool {
+    // 权限角色
+    address public dao;              // DAO 治理
+    address public settlementExecutor; // 结算执行器 (去中心化预言机)
+    mapping(address => bool) public authorizedBundlers;
+
+    modifier onlyAuthorizedBundler() {
+        require(authorizedBundlers[msg.sender], "Not authorized bundler");
+        require(BundlerRegistry.isActive(msg.sender), "Bundler not active");
+        _;
+    }
+
+    modifier onlyDAO() {
+        require(msg.sender == dao, "Only DAO");
+        _;
+    }
+
+    // 结算执行 (仅预言机调用)
+    function executeSettlement(
+        uint256 periodId,
+        address[] calldata users,
+        uint256[] calldata amounts,
+        bytes[] calldata proofs  // ZK证明
+    ) external onlySettlementExecutor {
+        // 1. 验证 ZK 证明
+        // 2. 验证 bundler 记录的一致性
+        // 3. 执行批量结算
+        // 4. 更新 bundler 信誉
+    }
+}
+```
+
 ## 系统架构
 
 ### 核心组件
@@ -238,6 +327,207 @@ graph TD
 - [ ] 全生态 adoption
 - [ ] AI 优化算法
 - [ ] 跨链桥接支持
+
+## 核心问题深度分析
+
+### 问题1: 如何防止 Bundler 滥用？
+
+#### **多重防护机制**
+```solidity
+contract FraudPrevention {
+    // 1. 质押与惩罚机制
+    mapping(address => uint256) public bundlerStake;
+    mapping(address => FraudRecord[]) public fraudHistory;
+
+    function detectFraudulentSettlement(
+        address bundler,
+        uint256 periodId,
+        bytes32 recordHash
+    ) external {
+        // 检测异常模式:
+        // - 记录哈希不一致
+        // - 异常高的赞助量
+        // - 重复记录
+        // - 时间异常
+
+        if (isFraudDetected(bundler, recordHash)) {
+            slashBundler(bundler, calculatePenalty());
+            emit FraudDetected(bundler, periodId);
+        }
+    }
+}
+```
+
+#### **零知识证明系统**
+```typescript
+class ZKSettlementProof {
+    // 证明: "bundler记录的赞助数据是正确的"
+    proveSettlementIntegrity(
+        bundlerRecords: SettlementRecord[],
+        userConfirmations: UserProof[]
+    ): ZKProof {
+        // 生成证明: bundler没有伪造记录
+        // 用户确认赞助确实发生
+        // 金额计算正确
+    }
+}
+```
+
+#### **去中心化预言机验证**
+```solidity
+contract SettlementOracle {
+    // 多预言机验证
+    function validateSettlementBatch(
+        SettlementBatch calldata batch
+    ) external returns (bool) {
+        // 1. 收集多个预言机签名
+        // 2. 验证记录一致性
+        // 3. 阈值签名验证
+        require(collectOracleSignatures(batch) >= QUORUM, "Insufficient consensus");
+
+        return true;
+    }
+}
+```
+
+### 问题2: ERC20 结算合约安全性设计
+
+#### **智能合约权限设计**
+```solidity
+contract ERC20SettlementIntegration {
+    // ERC20 代币注册表
+    struct TokenConfig {
+        address tokenAddress;
+        address settlementContract;    // 指定的结算合约
+        uint256 maxSettlementAmount;   // 单次结算上限
+        uint256 dailyLimit;           // 每日限额
+        bool requiresApproval;        // 是否需要 approve
+    }
+
+    mapping(address => TokenConfig) public tokenConfigs;
+
+    // 批量结算 (仅授权结算器调用)
+    function batchSettleERC20(
+        address token,
+        address[] calldata users,
+        uint256[] calldata amounts
+    ) external onlyAuthorizedSettler {
+        TokenConfig memory config = tokenConfigs[token];
+        require(config.tokenAddress != address(0), "Token not registered");
+
+        // 安全检查
+        require(validateSettlementLimits(token, amounts), "Exceeds limits");
+
+        // 执行结算
+        if (config.requiresApproval) {
+            // 传统 ERC20 流程
+            executeWithApproval(token, users, amounts);
+        } else {
+            // 预授权 ERC20 流程
+            executePreAuthorized(token, users, amounts);
+        }
+    }
+}
+```
+
+#### **预授权 ERC20 代币设计**
+```solidity
+contract PreAuthorizedERC20 is ERC20 {
+    // 在代币合约中预设结算权限
+    mapping(address => mapping(address => bool)) public preAuthorizedSettlers;
+
+    constructor(address _settlementContract) ERC20("SponsoredToken", "SPT") {
+        // 部署时预授权结算合约
+        preAuthorizedSettlers[address(this)][_settlementContract] = true;
+    }
+
+    // 预授权转账 (无需用户 approve)
+    function preAuthorizedTransfer(
+        address settler,
+        address from,
+        address to,
+        uint256 amount
+    ) external {
+        require(preAuthorizedSettlers[from][settler], "Not pre-authorized");
+        require(balanceOf(from) >= amount, "Insufficient balance");
+
+        _transfer(from, to, amount);
+        emit PreAuthorizedTransfer(from, to, amount, settler);
+    }
+}
+```
+
+### 问题3: 是否还需要链上合约？
+
+#### **策略合约架构**
+```solidity
+contract SponsorshipStrategyManager {
+    struct SponsorshipStrategy {
+        address token;              // 赞助代币
+        uint256 gasPrice;           // Gas 价格 (wei)
+        uint256 markup;             // 加价百分比
+        bytes32 eligibilityRules;   // 资格规则哈希
+        bool isActive;
+    }
+
+    mapping(bytes32 => SponsorshipStrategy) public strategies;
+
+    // 策略注册 (DAO 治理)
+    function registerStrategy(
+        bytes32 strategyId,
+        SponsorshipStrategy calldata strategy
+    ) external onlyDAO {
+        strategies[strategyId] = strategy;
+        emit StrategyRegistered(strategyId, strategy);
+    }
+
+    // 动态价格调整
+    function updateGasPrice(bytes32 strategyId, uint256 newPrice) external {
+        // 根据市场条件调整价格
+        // 确保盈利性
+    }
+}
+```
+
+#### **去中心化 vs 链上合约的权衡**
+
+| 方面 | 纯去中心化 | 链上策略合约 |
+|------|------------|--------------|
+| **灵活性** | 高 (随时调整) | 中 (需治理投票) |
+| **安全性** | 中 (依赖预言机) | 高 (链上验证) |
+| **Gas成本** | 低 | 中 |
+| **响应速度** | 快 | 中 |
+| **治理成本** | 高 | 中 |
+
+#### **混合架构建议**
+```solidity
+contract HybridSponsorshipSystem {
+    // 基础策略上链 (稳定部分)
+    mapping(address => BaseStrategy) public baseStrategies;
+
+    // 动态参数由预言机提供 (灵活部分)
+    function getDynamicParameters(
+        address token
+    ) external view returns (DynamicParams) {
+        // 从预言机获取最新参数
+        // 结合基础策略计算最终价格
+    }
+
+    // 结算最终由策略合约执行
+    function executeSponsoredSettlement(
+        bytes32 strategyId,
+        address[] calldata users,
+        uint256[] calldata gasAmounts
+    ) external {
+        BaseStrategy memory strategy = baseStrategies[strategyId];
+
+        // 1. 验证策略有效性
+        // 2. 计算结算金额 (gasAmount * gasPrice * markup)
+        // 3. 执行 ERC20 转账
+        // 4. 分配收益给 bundler
+    }
+}
+```
 
 ## 结论
 
