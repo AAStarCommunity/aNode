@@ -1,6 +1,14 @@
 # aNode
 aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
 
+## 🌟 核心特性
+
+### 🔄 去中心化赞助系统 (Decentralized Sponsorship System)
+- **零 Gas 体验**: Bundler 直接验证资格并预付 gas，异步池化结算
+- **双重资格验证**: NFT持有(SBT) + ERC20余额(PNT) + 零Gas价格标记
+- **透明结算**: 所有赞助记录上链，DAO 治理结算规则
+
+### 🔐 传统 Paymaster 支持
 - ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
 - ERC-20 PNTs and Community customized ERC-20 gas token support
 - Self-running paymaster support with SuperPaymaster relay and contract(if you want publish your ERC-20 gas token)
@@ -53,6 +61,7 @@ Complete documentation for the aNode Rust paymaster service (Cloudflare Workers)
 
 #### Core Architecture Documents
 - **[aNodeFrameworkAndPaymasterModuleDesign.md](docs/aNode-rust/aNodeFrameworkAndPaymasterModuleDesign.md)** - Unified framework and paymaster module design, including ERC-4337 integration, modular architecture, and API interfaces
+- **[decentralized-sponsorship-system.md](docs/aNode-rust/decentralized-sponsorship-system.md)** - Revolutionary decentralized sponsorship system with zero gas fees and pooled settlement
 - **[aNodeRoadmap.md](docs/aNode-rust/aNodeRoadmap.md)** - Complete aNode development roadmap across 4 phases (Paymaster → Passkey Validator → Account Manager → Guardian System)
 - **[aNodeArchitectureDesign.md](docs/aNode-rust/aNodeArchitectureDesign.md)** - Overall architecture design with pluggable modules and ZeroDev compatibility
 - **[ArchitecturalAnalysis.md](docs/aNode-rust/ArchitecturalAnalysis.md)** - Senior architect's perspective on aNode system design analysis
