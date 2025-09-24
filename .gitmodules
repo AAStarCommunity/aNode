@@ -25,3 +25,6 @@
 [submodule "vendor/bastion"]
 	path = vendor/bastion
 	url = https://github.com/zerodevapp/bastion.git
+[submodule "vendor/account-abstraction"]
+	path = vendor/account-abstraction
+	url = git@github.com:eth-infinitism/account-abstraction.git
