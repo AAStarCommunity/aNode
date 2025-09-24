@@ -285,7 +285,7 @@ cargo install cargo-generate
 
 # 克隆官方模板仓库
 git clone https://github.com/cloudflare/workers-rs.git temp-template
-cp -r temp-template/templates/hello-world cloudflare-demo
+cp -r temp-template/templates/hello-world [your-project-name]
 ```
 
 #### 步骤 2: 配置项目
