@@ -245,6 +245,85 @@ Ultra-Relay 的设计允许：
 - **批量处理**: 多个操作共享 bundler 开销
 - **智能路由**: 根据 gas 价格选择最优路径
 
+## 去中心化赞助机制设计
+
+### 核心思路分析
+
+你的想法非常有洞察力！如果 bundler 直接提供赞助服务，那么传统 paymaster 的角色就可以被大大简化。以下是去中心化赞助机制的完整设计：
+
+#### 1. 准入条件验证
+```typescript
+interface SponsorshipEligibility {
+  hasRequiredNFT: boolean      // 拥有特定 NFT (如 SBT)
+  hasMinimumERC20Balance: boolean  // ERC20 余额充足
+  maxFeePerGas: 0n            // 零 gas 价格标记
+  maxPriorityFeePerGas: 0n    // 零 gas 价格标记
+}
+```
+
+#### 2. 链下验证逻辑
+```typescript
+class DecentralizedSponsorshipValidator {
+  async validateSponsorshipEligibility(userOp: UserOperation): Promise<boolean> {
+    // 1. 验证 NFT 持有 (链下缓存)
+    const hasNFT = await this.checkNFTOwnership(userOp.sender)
+
+    // 2. 验证 ERC20 余额 (链下缓存)
+    const hasBalance = await this.checkERC20Balance(userOp.sender)
+
+    // 3. 验证 gas 价格为 0
+    const isZeroGas = userOp.maxFeePerGas === 0n && userOp.maxPriorityFeePerGas === 0n
+
+    return hasNFT && hasBalance && isZeroGas
+  }
+}
+```
+
+#### 3. 异步池化结算系统
+```solidity
+contract SponsorshipSettlementPool {
+    struct SponsorshipRecord {
+        address user;
+        uint256 gasAmount;
+        uint256 blockNumber;
+        bytes32 userOpHash;
+    }
+
+    // 池化记录
+    mapping(address => SponsorshipRecord[]) public userRecords;
+
+    // 批量结算
+    function batchSettle(address[] calldata users, uint256[] calldata amounts) external {
+        // 1. 验证调用者权限
+        // 2. 批量扣除 ERC20
+        // 3. 分配收益给 bundler
+        // 4. 清理记录
+    }
+
+    // 紧急暂停
+    function emergencyPause() external onlyOwner {
+        // 暂停所有结算
+    }
+}
+```
+
+### 优势分析
+
+#### 1. 去中心化优势
+- **无中心化依赖**: 不依赖特定 paymaster 合约
+- **透明结算**: 所有赞助记录上链可查
+- **社区治理**: 可通过 DAO 治理结算规则
+
+#### 2. 用户体验提升
+- **零 Gas 费用**: 用户无需准备 gas token
+- **即时可用**: 无需等待 paymaster 确认
+- **批量结算**: 减少交易次数和 gas 成本
+
+#### 3. 经济模型优化
+- **降低门槛**: NFT + ERC20 双重验证，安全性高
+- **激励机制**: Bundler 通过提供服务获得收益
+- **可持续性**: 通过 ERC20 代币结算，形成闭环经济
+
 ## 实现建议
 
 ### Phase 1: 基础 Paymaster 支持
@@ -252,15 +331,15 @@ Ultra-Relay 的设计允许：
 - 支持外部 paymaster 合约
 - 完成基本的 gas 赞助流程
 
-### Phase 2: Relayer 赞助扩展
-- 添加零 gas 价格支持
-- 实现 relayer 直接支付逻辑
-- 支持 SBT/PNT 验证的免费赞助
+### Phase 2: 去中心化赞助扩展
+- 实现 NFT + ERC20 验证机制
+- 添加零 gas 价格支持和 bundler 直接支付
+- 部署 SponsorshipSettlementPool 合约
 
 ### Phase 3: 高级功能
-- 批量操作优化
-- 动态 gas 价格调整
-- 跨链 paymaster 支持
+- 实现异步池化结算系统
+- 添加批量操作优化
+- 构建社区治理机制
 
 ## 结论
 
