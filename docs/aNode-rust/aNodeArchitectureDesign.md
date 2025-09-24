@@ -1,10 +1,17 @@
-# aNode Paymaster Server Architecture Design
+# aNode Relay Server Architecture Design
 
 ## 项目愿景
 
-aNode 是一个精简、高效的 ERC-4337 paymaster 服务器，借鉴 ZeroDev 的成熟设计模式，扩展了传统 paymaster 的服务范围。我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 bundler 模块预留标准接口。
+aNode 是一个精简、高效的 ERC-4337 paymaster 服务器，借鉴 ZeroDev 的成熟设计模式，并扩展了传统 paymaster 的服务范围：
+- aNode Paymaster 服务（paymaster 主流程）
+- 可预设安全检查和二次确认机制（嵌入到 paymaster 的 useroperation 处理流程中）
+- Passkey Validator(独立提供服务 API，不参与 paymaster 流程)
+- Account Manager（Web 版本，依赖外部 KMS，独立提供 Web 服务，不参与 paymaster 流程）
+- Guardian System（依赖链上合约和 KMS，独立提供服务 API，不参与 paymaster 流程）
+我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 KMS 和 bundler 模块预留标准接口。
+当前设计主要围绕 aNode Paymaster 服务进行，其他服务为后续功能扩展。
 
-## Paymaster 服务器本质分析
+## Paymaster 服务本质分析
 
 基于对 ZeroDev SDK、Bastion、Examples 等仓库的深入分析，aNode 将 paymaster 服务器定位为 **ERC-4337 生态中的关键中间件**：
 
@@ -412,7 +419,7 @@ Content-Type: application/json
       "description": "您正在与一个未验证的合约交互",
       "riskFactors": [
         "合约未经过安全审计",
-        "合约部署时间少于24小时",
+        "合约部署时间少于 24 小时",
         "类似合约曾出现资金损失事件"
       ],
       "recommendations": [
