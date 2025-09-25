@@ -13,8 +13,25 @@
 ### 关键修改 (2025年1月22日)
 
 1. **零 Gas 费支持**: 接受 `maxFeePerGas` 和 `maxPriorityFeePerGas` 为 0 的 UserOperation
-2. **Relayer 模式**: Bundler 可以直接支付 gas，而不需要外部 paymaster
+2. **Relayer 直接支付**: Bundler 使用自己在 EntryPoint 的预存余额支付 gas
 3. **兼容性保持**: 仍支持传统的 paymaster 工作流
+
+### Gas 支付机制澄清
+
+**重要澄清**: Ultra-Relay 的"直接支付"并不是绕过 ERC-4337 标准，而是使用 bundler 的 EntryPoint 预存款。
+
+```typescript
+// Ultra-Relay 的 executor 账户配置
+// 这些账户需要在 EntryPoint 合约中预存 ETH
+"executor-private-keys": "0x...,0x...,0x..."
+```
+
+当 UserOperation 的 gas 价格为 0 时：
+1. Bundler 使用自己的 executor 账户发送 `handleOps` 交易
+2. EntryPoint 从 bundler 的预存款中扣除 gas 费用
+3. Bundler 通过链下结算回收成本
+
+这仍然符合 ERC-4337 标准，只是支付主体变成了 bundler 而不是用户或 paymaster。
 
 ## Paymaster 处理流程
 
