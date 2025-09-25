@@ -12,13 +12,11 @@ name = "anode-simple-paymaster-prod"
 # KV Namespaces
 [[kv_namespaces]]
 binding = "CACHE_KV"
-id = ""  # Fill this after creating KV namespace
-preview_id = ""
+id = "6398fa8debfc4e4899c1b0750149931c"
 
 [[kv_namespaces]]
 binding = "SETTLEMENT_KV"
-id = ""  # Fill this after creating KV namespace
-preview_id = ""
+id = "25820e1b97994307923359d514fdeabf"
 
 # Secrets (use wrangler secret put commands)
 # wrangler secret put PAYMASTER_PRIVATE_KEY
