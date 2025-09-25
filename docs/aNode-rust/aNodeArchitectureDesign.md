@@ -11,6 +11,18 @@ aNode 是一个精简、高效的 ERC-4337 paymaster 服务器，借鉴 ZeroDev 
 我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 KMS 和 bundler 模块预留标准接口。
 当前设计主要围绕 aNode Paymaster 服务进行，其他服务为后续功能扩展。
 
+### 核心服务矩阵
+
+| 服务模块 | 功能描述 | 当前状态 | 集成方式 |
+|---------|---------|---------|---------|
+| **Paymaster** | ERC-4337 标准 paymaster 流程 | ✅ 核心开发 | 主流程集成 |
+| **Bundler** | Bundler 私钥支付 + 链下结算 | 📋 扩展规划 | 可选集成 |
+| **Security Module** | 安全检查和二次确认机制 | 📋 扩展规划 | 嵌入 paymaster |
+| **Passkey Validator** | 基于 Passkey 的签名验证 | 📋 扩展规划 | 独立 API 服务 |
+| **Account Manager** | Web 账户管理和 KMS 集成 | 📋 扩展规划 | 独立 Web 服务 |
+| **Guardian System** | 社交恢复和多签治理 | 📋 扩展规划 | 独立 API 服务 |
+| **KMS Service** | 多层次密钥管理解决方案 | 📋 扩展规划 | 基础设施层 |
+
 ## Paymaster 服务本质分析
 
 基于对 ZeroDev SDK、Bastion、Examples 等仓库的深入分析，aNode 将 paymaster 服务器定位为 **ERC-4337 生态中的关键中间件**：

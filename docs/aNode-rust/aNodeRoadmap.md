@@ -3,6 +3,18 @@
 ## 项目愿景
 
 aNode 是一个无许可的公共产品，为社区提供基于 ERC-20 代币的 gas 赞助、用户操作安全检查等功能。通过模块化的四阶段设计，从基础的 paymaster 服务逐步发展为完整的账户抽象生态系统。
+### aNode 核心服务层
+- **Paymaster**：ERC-4337 标准 paymaster 流程
+- **Bundler**：bundler 私钥支付 + 链下结算
+- **安检服务**：安全检查和二次确认机制
+
+### 独立服务层
+- **Passkey Validator**：基于 Passkey 的签名验证
+- **Account Manager**：Web 账户管理和 KMS 集成
+- **Guardian System**：社交恢复和多签治理
+
+### 基础设施层
+- **KMS 服务**：多层次密钥管理解决方案
 
 ## 总体架构演进
 
