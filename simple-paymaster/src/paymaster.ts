@@ -1,10 +1,10 @@
-import type {
+import {
   ENTRYPOINT_VERSIONS,
-  Env,
-  PaymasterResponse,
-  UserOperation,
-  UserOperationV6,
-  UserOperationV7,
+  type Env,
+  type PaymasterResponse,
+  type UserOperation,
+  type UserOperationV6,
+  type UserOperationV7,
 } from './types'
 
 /**
@@ -52,8 +52,8 @@ export class aNodePaymaster {
       success: true,
       userOperation: {
         ...userOp,
-        paymasterAndData,
-      },
+        ...(this.isUserOperationV6(userOp) ? { paymasterAndData } : {}),
+      } as UserOperation,
       paymentMethod: 'paymaster',
     }
   }
@@ -66,7 +66,7 @@ export class aNodePaymaster {
     // For Phase 1, if maxFeePerGas and maxPriorityFeePerGas are 0, assume direct-payment
     // Otherwise, assume traditional paymaster
     if (userOp.maxFeePerGas === '0x0' && userOp.maxPriorityFeePerGas === '0x0') {
-      return 'direct-payment'
+      return 'direct-payment' as const
     }
     return 'paymaster'
   }
@@ -81,6 +81,10 @@ export class aNodePaymaster {
     return version === '0.7'
       ? this.env.ENTRYPOINT_V07_ADDRESS || ENTRYPOINT_VERSIONS['0.7'].address
       : this.env.ENTRYPOINT_V06_ADDRESS || ENTRYPOINT_VERSIONS['0.6'].address
+  }
+
+  private isUserOperationV6(userOp: UserOperation): userOp is UserOperationV6 {
+    return 'initCode' in userOp && 'paymasterAndData' in userOp
   }
 
   private isUserOperationV7(userOp: UserOperation): userOp is UserOperationV7 {
@@ -117,7 +121,7 @@ export class aNodePaymaster {
 
     // Use real paymaster address for Sepolia testnet
     const paymasterAddress =
-      this.env.PAYMASTER_CONTRACT_ADDRESS || '0x3720B69B7f30D92FACed624c39B1fd317408774B'
+      (this.env.PAYMASTER_CONTRACT_ADDRESS as `0x${string}`) || '0x3720B69B7f30D92FACed624c39B1fd317408774B'
     const verificationGasLimit = '0x186a0' // 100k gas
     const postOpGasLimit = '0xc350' // 50k gas
     const paymasterData = '0x' // Empty for this implementation

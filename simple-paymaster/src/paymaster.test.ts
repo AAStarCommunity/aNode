@@ -20,7 +20,7 @@ const mockEnv: Env = {
   NODE_ENV: 'test',
 }
 
-const mockUserOp: UserOperation = {
+const mockUserOp: UserOperationV6 = {
   sender: '0x1234567890123456789012345678901234567890',
   nonce: '0x0',
   initCode: '0x',
@@ -46,12 +46,12 @@ describe('aNodePaymaster', () => {
 
     expect(result.success).toBe(true)
     expect(result.paymentMethod).toBe('paymaster')
-    expect(result.userOperation.paymasterAndData).not.toBe('0x')
-    expect(result.userOperation.paymasterAndData.length).toBeGreaterThan(2)
+    expect((result.userOperation as UserOperationV6).paymasterAndData).not.toBe('0x')
+    expect((result.userOperation as UserOperationV6).paymasterAndData.length).toBeGreaterThan(2)
   })
 
   it('should process direct-payment UserOperation', async () => {
-    const directPaymentUserOp: UserOperation = {
+    const directPaymentUserOp: UserOperationV6 = {
       ...mockUserOp,
       maxFeePerGas: '0x0',
       maxPriorityFeePerGas: '0x0',
@@ -61,7 +61,7 @@ describe('aNodePaymaster', () => {
 
     expect(result.success).toBe(true)
     expect(result.paymentMethod).toBe('direct-payment')
-    expect(result.userOperation.paymasterAndData).toBe('0x')
+    expect((result.userOperation as UserOperationV6).paymasterAndData).toBe('0x')
     expect(result.userOperation.maxFeePerGas).toBe('0x0')
     expect(result.userOperation.maxPriorityFeePerGas).toBe('0x0')
   })
