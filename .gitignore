@@ -24,6 +24,12 @@ coverage/
 .wrangler/
 wrangler.toml.bak
 
+# Foundry/Forge
+simple-paymaster/contracts/broadcast/
+simple-paymaster/contracts/lib/
+simple-paymaster/contracts/out/
+simple-paymaster/contracts/cache/
+
 # Rust
 target/
 Cargo.lock
