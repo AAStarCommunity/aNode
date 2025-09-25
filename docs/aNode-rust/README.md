@@ -1,5 +1,18 @@
 # aNode Rust Documentation
 
+aNode 是一个精简、高效的 社区节点服务器，提供基础的 ERC-4337 paymaster 服务，借鉴 ZeroDev 的成熟设计模式，并扩展了服务范围：
+- aNode Paymaster 服务，标准的 4337paymaster 流程（paymaster 主流程）
+- ZeroDev 的 ultrRelay 方式，跳过链下签名和链上验证，直接使用 bundler 私钥提供赞助，使用链下结算方式（可以改造为链下记录积分，然后集中提交链上扣 erc20 的结算方式）
+- 安检服务：可预设的安全检查和二次确认机制（嵌入到 paymaster 的 useroperation 处理流程中）
+- Passkey Validator(独立提供服务 API，不参与 paymaster 流程，)
+- Account Manager（Web 版本，依赖外部 KMS，独立提供 Web 服务，默认不参与 paymaster 流程，可以被组合到流程中）
+- Guardian System（依赖链上合约和 KMS，独立提供服务 API，默认不参与 paymaster 流程）
+- KMS：提供系列解决方案，默认开发是.env 变量，生产环境提供 cloudflaresecrets store 方案和其他方案
+我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 KMS 和 bundler 模块预留标准接口。
+当前设计主要围绕 aNode Paymaster 服务进行
+，其他服务为后续功能扩展
+，我们专注于提供小巧精干的解决方案，最小化依赖包，降低应用体积，同时为未来集成 KMS 和 bundler 模块预留标准接口。
+
 This directory contains all documentation related to the aNode Rust implementation - a Cloudflare Workers-based ERC-4337 paymaster service.
 
 ## 📚 Documentation Overview
