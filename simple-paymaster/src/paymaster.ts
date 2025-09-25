@@ -1,4 +1,11 @@
-import type { Env, PaymasterResponse, UserOperation } from './types'
+import type {
+  ENTRYPOINT_VERSIONS,
+  Env,
+  PaymasterResponse,
+  UserOperation,
+  UserOperationV6,
+  UserOperationV7,
+} from './types'
 
 /**
  * aNode Paymaster Core
@@ -9,6 +16,19 @@ export class aNodePaymaster {
   constructor(private env: Env) {}
 
   async processUserOperation(userOp: UserOperation): Promise<PaymasterResponse> {
+    // Validate UserOperation format
+    if (!this.validateUserOperation(userOp)) {
+      return {
+        success: false,
+        userOperation: userOp,
+        paymentMethod: 'paymaster',
+        error: {
+          code: 'INVALID_USER_OPERATION',
+          message: 'Invalid UserOperation format for the configured EntryPoint version',
+        },
+      }
+    }
+
     const paymentMethod = this.detectPaymentMethod(userOp)
 
     if (paymentMethod === 'direct-payment') {
@@ -51,6 +71,41 @@ export class aNodePaymaster {
     return 'paymaster'
   }
 
+  private getEntryPointVersion(): '0.6' | '0.7' {
+    const version = this.env.ENTRYPOINT_VERSION || '0.6'
+    return version === '0.7' ? '0.7' : '0.6'
+  }
+
+  private getEntryPointAddress(): string {
+    const version = this.getEntryPointVersion()
+    return version === '0.7'
+      ? this.env.ENTRYPOINT_V07_ADDRESS || ENTRYPOINT_VERSIONS['0.7'].address
+      : this.env.ENTRYPOINT_V06_ADDRESS || ENTRYPOINT_VERSIONS['0.6'].address
+  }
+
+  private isUserOperationV7(userOp: UserOperation): userOp is UserOperationV7 {
+    return 'paymaster' in userOp || 'factory' in userOp
+  }
+
+  private validateUserOperation(userOp: UserOperation): boolean {
+    const version = this.getEntryPointVersion()
+
+    if (version === '0.7') {
+      // v0.7 validation - allow both v0.6 and v0.7 formats
+      return !!(userOp.sender && userOp.nonce && userOp.callData && userOp.signature)
+    }
+    // v0.6 validation - require v0.6 format
+    const v6UserOp = userOp as UserOperationV6
+    return !!(
+      v6UserOp.sender &&
+      v6UserOp.nonce &&
+      v6UserOp.initCode !== undefined &&
+      v6UserOp.callData &&
+      v6UserOp.paymasterAndData !== undefined &&
+      v6UserOp.signature
+    )
+  }
+
   /**
    * Generates a placeholder paymasterAndData for Phase 1.
    * In Phase 2, this will involve actual signing and more complex logic.
@@ -63,16 +118,13 @@ export class aNodePaymaster {
     // 3. Signing the hash with the paymaster's private key
     // 4. Encoding paymaster data (verificationGasLimit, postOpGasLimit, paymasterData, signature)
 
-    // Get EntryPoint address based on version (default to v0.6)
-    const entryPointVersion = this.env.ENTRYPOINT_VERSION || '0.6'
-    const _entryPointAddress =
-      entryPointVersion === '0.7'
-        ? this.env.ENTRYPOINT_V07_ADDRESS || '0x0000000071727De22E5E9d8BAf0edAc6f37da032'
-        : this.env.ENTRYPOINT_V06_ADDRESS || '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'
+    // Get EntryPoint address and version
+    const entryPointVersion = this.getEntryPointVersion()
+    const _entryPointAddress = this.getEntryPointAddress()
 
-    // Placeholder values for Phase 1
+    // Use real paymaster address for Sepolia testnet
     const paymasterAddress =
-      this.env.PAYMASTER_CONTRACT_ADDRESS || '0x1234567890123456789012345678901234567890'
+      this.env.PAYMASTER_CONTRACT_ADDRESS || '0x3720B69B7f30D92FACed624c39B1fd317408774B'
     const verificationGasLimit = '0x186a0' // 100k gas
     const postOpGasLimit = '0xc350' // 50k gas
     const paymasterData = '0x' // Empty for Phase 1

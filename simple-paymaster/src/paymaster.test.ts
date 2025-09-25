@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { aNodePaymaster } from './paymaster'
-import type { Env, UserOperation } from './types'
+import type { Env, UserOperation, UserOperationV6 } from './types'
 
 // Mock environment for testing
 const mockEnv: Env = {
@@ -16,7 +16,7 @@ const mockEnv: Env = {
   ENTRYPOINT_V06_ADDRESS: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   ENTRYPOINT_V07_ADDRESS: '0x0000000071727De22E5E9d8BAf0edAc6f37da032',
   ENTRYPOINT_VERSION: '0.6',
-  PAYMASTER_CONTRACT_ADDRESS: '0x1234567890123456789012345678901234567890',
+  PAYMASTER_CONTRACT_ADDRESS: '0x3720B69B7f30D92FACed624c39B1fd317408774B',
   NODE_ENV: 'test',
 }
 

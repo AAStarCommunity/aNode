@@ -20,6 +20,10 @@ out/
 coverage/
 .nyc_output/
 
+# Cloudflare Workers
+.wrangler/
+wrangler.toml.bak
+
 # Rust
 target/
 Cargo.lock
