@@ -1,0 +1,40 @@
+name = "anode-simple-paymaster"
+main = "src/index.ts"
+compatibility_date = "2024-09-25"
+compatibility_flags = ["nodejs_compat"]
+
+[env.development]
+name = "anode-simple-paymaster-dev"
+
+[env.production]
+name = "anode-simple-paymaster-prod"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "CACHE_KV"
+id = ""  # Fill this after creating KV namespace
+preview_id = ""
+
+[[kv_namespaces]]
+binding = "SETTLEMENT_KV"
+id = ""  # Fill this after creating KV namespace
+preview_id = ""
+
+# Secrets (use wrangler secret put commands)
+# wrangler secret put PAYMASTER_PRIVATE_KEY
+# wrangler secret put ETHEREUM_RPC_URL
+# wrangler secret put SEPOLIA_RPC_URL
+
+[vars]
+NODE_ENV = "development"
+LOG_LEVEL = "info"
+ENTRYPOINT_V06_ADDRESS = "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789"
+ENTRYPOINT_V07_ADDRESS = "0x0000000071727De22E5E9d8BAf0edAc6f37da032"
+ENTRYPOINT_VERSION = "0.6"
+PAYMASTER_CONTRACT_ADDRESS = "0x1234567890123456789012345678901234567890"
+DEBUG = "true"
+ENABLE_METRICS = "true"
+PORT = "8787"
+RATE_LIMIT_REQUESTS_PER_MINUTE = "100"
+RATE_LIMIT_BURST_SIZE = "20"
+ALLOWED_ORIGINS = "http://localhost:8787,https://yourdomain.com"
