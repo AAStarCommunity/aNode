@@ -44,12 +44,25 @@ export default {
       )
     }
 
-    // Main API endpoint
-    if (request.method === 'POST' && pathname === '/api/v1/paymaster/process') {
+    // Main API endpoint - support both version-specific and generic endpoints
+    if (request.method === 'POST' && (pathname === '/api/v1/paymaster/process' || pathname === '/api/v1/paymaster/process/v06' || pathname === '/api/v1/paymaster/process/v07')) {
       try {
+        // Extract version from URL path or request body
+        let entryPointVersion: '0.6' | '0.7' | undefined
+
+        if (pathname === '/api/v1/paymaster/process/v06') {
+          entryPointVersion = '0.6'
+        } else if (pathname === '/api/v1/paymaster/process/v07') {
+          entryPointVersion = '0.7'
+        }
+
         const requestBody: ProcessRequest = await request.json()
-        const { userOperation, entryPointVersion } = requestBody
-        const paymaster = new aNodePaymaster(env, entryPointVersion)
+        const { userOperation, entryPointVersion: bodyVersion } = requestBody
+
+        // Body version takes precedence if specified in URL-specific endpoints
+        const finalVersion = entryPointVersion || bodyVersion
+
+        const paymaster = new aNodePaymaster(env, finalVersion)
 
         // Validate userOperation structure
         if (!userOperation || typeof userOperation !== 'object') {

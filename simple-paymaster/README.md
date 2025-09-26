@@ -78,12 +78,22 @@ aNode Simple Paymaster 提供 RESTful API，支持 ERC-4337 EntryPoint v0.6 和 
 | 端点 | 方法 | 描述 |
 |------|------|------|
 | `/health` | GET | 健康检查 |
-| `/api/v1/paymaster/process` | POST | 处理 UserOperation |
+| `/api/v1/paymaster/process` | POST | 处理 UserOperation (自动检测版本) |
+| `/api/v1/paymaster/process/v06` | POST | 处理 v0.6 UserOperation |
+| `/api/v1/paymaster/process/v07` | POST | 处理 v0.7 UserOperation |
 
 ### 支持的 EntryPoint 版本
 
 - **EntryPoint v0.6** (默认): `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`
 - **EntryPoint v0.7**: `0x0000000071727De22E5E9d8BAf0edAc6f37da032`
+
+### 版本选择方式
+
+API 支持三种方式指定 EntryPoint 版本：
+
+1. **URL 路径方式** (推荐): 使用版本特定的端点
+2. **请求体参数**: 在请求体中指定 `entryPointVersion`
+3. **自动检测**: 默认使用 v0.6
 
 ## API 详情
 
@@ -212,7 +222,47 @@ Content-Type: application/json
 | `processing` | Object | 处理信息 |
 | `error` | Object | 错误信息 (仅在失败时) |
 
-**cURL 示例 (v0.6):**
+**cURL 示例 (v0.6 - URL 路径方式):**
+```bash
+curl -X POST https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process/v06 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userOperation": {
+      "sender": "0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6",
+      "nonce": "0x0",
+      "initCode": "0x",
+      "callData": "0xa9059cbb00000000000000000000000027243FAc2c0bEf46F143a705708dC4A7eD47685400000000000000000000000000000000000000000000000000000000000003e8",
+      "callGasLimit": "0x5208",
+      "verificationGasLimit": "0x186a0",
+      "preVerificationGas": "0x5208",
+      "maxFeePerGas": "0x3b9aca00",
+      "maxPriorityFeePerGas": "0x3b9aca00",
+      "paymasterAndData": "0x",
+      "signature": "0x1234567890abcdef"
+    }
+  }'
+```
+
+**cURL 示例 (v0.7 - URL 路径方式):**
+```bash
+curl -X POST https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process/v07 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userOperation": {
+      "sender": "0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6",
+      "nonce": "0x0",
+      "initCode": "0x",
+      "callData": "0xa9059cbb00000000000000000000000027243FAc2c0bEf46F143a705708dC4A7eD47685400000000000000000000000000000000000000000000000000000000000003e8",
+      "accountGasLimits": "0x000000000000000000000000000052080000000000000000000000000000186a0",
+      "preVerificationGas": "0x5208",
+      "gasFees": "0x000000000000000000000000003b9aca000000000000000000000000003b9aca00",
+      "paymasterAndData": "0x",
+      "signature": "0x1234567890abcdef"
+    }
+  }'
+```
+
+**cURL 示例 (自动检测版本):**
 ```bash
 curl -X POST https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process \
   -H "Content-Type: application/json" \
@@ -231,26 +281,6 @@ curl -X POST https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/pa
       "signature": "0x1234567890abcdef"
     },
     "entryPointVersion": "0.6"
-  }'
-```
-
-**cURL 示例 (v0.7):**
-```bash
-curl -X POST https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process \
-  -H "Content-Type: application/json" \
-  -d '{
-    "userOperation": {
-      "sender": "0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6",
-      "nonce": "0x0",
-      "initCode": "0x",
-      "callData": "0xa9059cbb00000000000000000000000027243FAc2c0bEf46F143a705708dC4A7eD47685400000000000000000000000000000000000000000000000000000000000003e8",
-      "accountGasLimits": "0x000000000000000000000000000052080000000000000000000000000000186a0",
-      "preVerificationGas": "0x5208",
-      "gasFees": "0x000000000000000000000000003b9aca000000000000000000000000003b9aca00",
-      "paymasterAndData": "0x",
-      "signature": "0x1234567890abcdef"
-    },
-    "entryPointVersion": "0.7"
   }'
 ```
 
