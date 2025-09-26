@@ -30,8 +30,19 @@ node test-e2e.mjs
 
 ## 🔧 配置说明
 
+### 支持的 EntryPoint 版本
+
+aNodePaymaster 支持 ERC-4337 EntryPoint v0.6 和 v0.7：
+
+#### EntryPoint v0.6 (默认)
+- **合约地址**: `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789`
+- **UserOperation 格式**: 标准格式，包含独立字段
+
+#### EntryPoint v0.7
+- **合约地址**: `0x0000000071727De22E5E9d8BAf0edAc6f37da032`
+- **UserOperation 格式**: PackedUserOperation，包含打包字段
+
 ### 测试账户信息
-- **EntryPoint**: `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789` (v0.6)
 - **SimpleAccount A**: `0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6`
 - **SimpleAccount B**: `0x27243FAc2c0bEf46F143a705708dC4A7eD476854`
 - **PNT Token**: `0x3e7B771d4541eC85c8137e950598Ac97553a337a`
@@ -51,6 +62,49 @@ export PAYMASTER_PRIVATE_KEY="0x...paymaster_private_key"
 cp e2e-config.example.mjs e2e-config.mjs
 # 编辑 e2e-config.mjs 填入您的配置
 ```
+
+### API 请求格式
+
+aNodePaymaster API 支持通过请求体指定 EntryPoint 版本：
+
+#### v0.6 请求示例 (默认)
+```json
+{
+  "userOperation": {
+    "sender": "0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6",
+    "nonce": "0x0",
+    "initCode": "0x",
+    "callData": "0x...",
+    "callGasLimit": "0x5208",
+    "verificationGasLimit": "0x186a0",
+    "preVerificationGas": "0x5208",
+    "maxFeePerGas": "0x3b9aca00",
+    "maxPriorityFeePerGas": "0x3b9aca00",
+    "paymasterAndData": "0x",
+    "signature": "0x"
+  }
+}
+```
+
+#### v0.7 请求示例
+```json
+{
+  "userOperation": {
+    "sender": "0x7D7a0D3239285faE78F9c364D81bb1E3bc555BC6",
+    "nonce": "0x0",
+    "initCode": "0x",
+    "callData": "0x...",
+    "accountGasLimits": "0x000000000000000000000000000052080000000000000000000000000000186a0",
+    "preVerificationGas": "0x5208",
+    "gasFees": "0x000000000000000000000000003b9aca000000000000000000000000003b9aca00",
+    "paymasterAndData": "0x",
+    "signature": "0x"
+  },
+  "entryPointVersion": "0.7"
+}
+```
+
+**注意**: 如果不指定 `entryPointVersion`，默认使用 v0.6。
 
 ## 🧪 测试流程
 

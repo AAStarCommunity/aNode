@@ -4,7 +4,11 @@ import {
   type PaymasterResponse,
   type UserOperation,
   type UserOperationV6,
-  type UserOperationV7,
+  type PackedUserOperation,
+  isUserOperationV6,
+  isUserOperationV7,
+  convertV6ToV7,
+  convertV7ToV6,
 } from './types'
 
 /**
@@ -13,7 +17,7 @@ import {
  * Compatible with future direct-payment expansion
  */
 export class aNodePaymaster {
-  constructor(private env: Env) {}
+  constructor(private env: Env, private requestedVersion?: '0.6' | '0.7') {}
 
   async processUserOperation(userOp: UserOperation): Promise<PaymasterResponse> {
     // Validate UserOperation format
@@ -52,7 +56,7 @@ export class aNodePaymaster {
       success: true,
       userOperation: {
         ...userOp,
-        ...(this.isUserOperationV6(userOp) ? { paymasterAndData } : {}),
+        paymasterAndData, // Both v0.6 and v0.7 have paymasterAndData field
       } as UserOperation,
       paymentMethod: 'paymaster',
     }
@@ -72,6 +76,10 @@ export class aNodePaymaster {
   }
 
   private getEntryPointVersion(): '0.6' | '0.7' {
+    // Priority: 1. Requested version from API call, 2. Environment variable, 3. Default '0.6'
+    if (this.requestedVersion) {
+      return this.requestedVersion
+    }
     const version = this.env.ENTRYPOINT_VERSION || '0.6'
     return version === '0.7' ? '0.7' : '0.6'
   }
@@ -84,11 +92,11 @@ export class aNodePaymaster {
   }
 
   private isUserOperationV6(userOp: UserOperation): userOp is UserOperationV6 {
-    return 'initCode' in userOp && 'paymasterAndData' in userOp
+    return isUserOperationV6(userOp)
   }
 
-  private isUserOperationV7(userOp: UserOperation): userOp is UserOperationV7 {
-    return 'paymaster' in userOp || 'factory' in userOp
+  private isUserOperationV7(userOp: UserOperation): userOp is PackedUserOperation {
+    return isUserOperationV7(userOp)
   }
 
   private validateUserOperation(userOp: UserOperation): boolean {
@@ -113,22 +121,23 @@ export class aNodePaymaster {
   /**
    * Generates real paymasterAndData with proper signature.
    * For ERC-4337 paymaster validation.
+   * Supports both v0.6 and v0.7 formats
    */
   private async generatePaymasterAndData(userOp: UserOperation): Promise<string> {
     // Use real paymaster address for Sepolia testnet
     const paymasterAddress =
       (this.env.PAYMASTER_CONTRACT_ADDRESS as `0x${string}`) || '0x321eB27CA443ED279503b121E1e0c8D87a4f4B51'
-    
-    // For Phase 2, use the simplest possible format like TestPaymasterAcceptAll
+
+    // For both v0.6 and v0.7, use the simplest possible format like TestPaymasterAcceptAll
     // Just return the paymaster address with minimal data
     const validUntil = 0 // No expiry (6 bytes)
     const validAfter = 0 // Valid immediately (6 bytes)
 
-    // Encode paymasterAndData with minimal format:
+    // For v0.7, the paymasterAndData format is the same as v0.6
     // paymaster (20 bytes) + validUntil (6 bytes) + validAfter (6 bytes)
     const validUntilHex = validUntil.toString(16).padStart(12, '0') // 6 bytes
     const validAfterHex = validAfter.toString(16).padStart(12, '0') // 6 bytes
-    
+
     return (
       paymasterAddress + // 20 bytes (40 hex chars)
       validUntilHex + // 6 bytes (12 hex chars)

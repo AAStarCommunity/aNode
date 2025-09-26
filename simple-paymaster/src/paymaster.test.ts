@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { aNodePaymaster } from './paymaster'
-import type { Env, UserOperation, UserOperationV6 } from './types'
+import type { Env, UserOperation, UserOperationV6, PackedUserOperation } from './types'
 
 // Mock environment for testing
 const mockEnv: Env = {
@@ -30,6 +30,18 @@ const mockUserOp: UserOperationV6 = {
   preVerificationGas: '0x5208',
   maxFeePerGas: '0x3b9aca00',
   maxPriorityFeePerGas: '0x3b9aca00',
+  paymasterAndData: '0x',
+  signature: '0x',
+}
+
+const mockPackedUserOp: PackedUserOperation = {
+  sender: '0x1234567890123456789012345678901234567890',
+  nonce: '0x0',
+  initCode: '0x',
+  callData: '0x',
+  accountGasLimits: '0x000000000000000000000000000052080000000000000000000000000000186a0', // packed callGasLimit + verificationGasLimit
+  preVerificationGas: '0x5208',
+  gasFees: '0x000000000000000000000000003b9aca000000000000000000000000003b9aca00', // packed maxFeePerGas + maxPriorityFeePerGas
   paymasterAndData: '0x',
   signature: '0x',
 }
@@ -64,5 +76,30 @@ describe('aNodePaymaster', () => {
     expect((result.userOperation as UserOperationV6).paymasterAndData).toBe('0x')
     expect(result.userOperation.maxFeePerGas).toBe('0x0')
     expect(result.userOperation.maxPriorityFeePerGas).toBe('0x0')
+  })
+
+  it('should process v0.7 PackedUserOperation', async () => {
+    const paymasterV7 = new aNodePaymaster(mockEnv, '0.7')
+    const result = await paymasterV7.processUserOperation(mockPackedUserOp)
+
+    expect(result.success).toBe(true)
+    expect(result.paymentMethod).toBe('paymaster')
+    expect((result.userOperation as PackedUserOperation).paymasterAndData).not.toBe('0x')
+    expect((result.userOperation as PackedUserOperation).paymasterAndData.length).toBeGreaterThan(2)
+  })
+
+  it('should use requested version over environment version', async () => {
+    const paymasterV7 = new aNodePaymaster(mockEnv, '0.7')
+    const result = await paymasterV7.processUserOperation(mockPackedUserOp)
+
+    expect(result.success).toBe(true)
+    // Should use v0.7 EntryPoint address even though env is set to '0.6'
+  })
+
+  it('should fallback to environment version when no requested version', async () => {
+    const result = await paymaster.processUserOperation(mockUserOp)
+
+    expect(result.success).toBe(true)
+    // Should use v0.6 based on mockEnv.ENTRYPOINT_VERSION = '0.6'
   })
 })

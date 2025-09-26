@@ -47,8 +47,9 @@ export default {
     // Main API endpoint
     if (request.method === 'POST' && pathname === '/api/v1/paymaster/process') {
       try {
-        const paymaster = new aNodePaymaster(env)
-        const { userOperation }: ProcessRequest = await request.json()
+        const requestBody: ProcessRequest = await request.json()
+        const { userOperation, entryPointVersion } = requestBody
+        const paymaster = new aNodePaymaster(env, entryPointVersion)
 
         // Validate userOperation structure
         if (!userOperation || typeof userOperation !== 'object') {
