@@ -75,8 +75,9 @@ contract aNodePaymaster is IPaymaster06, Ownable {
             validAfter
         );
 
-        // Return context for postOp
-        context = abi.encode(userOpHash, userOp.sender);
+        // For unstaked paymaster, we must return empty context
+        // Only staked paymasters can return context data
+        context = "";
         
         return (context, validationData);
     }

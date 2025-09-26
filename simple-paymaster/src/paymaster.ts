@@ -117,7 +117,7 @@ export class aNodePaymaster {
   private async generatePaymasterAndData(userOp: UserOperation): Promise<string> {
     // Use real paymaster address for Sepolia testnet
     const paymasterAddress =
-      (this.env.PAYMASTER_CONTRACT_ADDRESS as `0x${string}`) || '0x96948cCC95926ef82929502c4AbbeEe4c755a087'
+      (this.env.PAYMASTER_CONTRACT_ADDRESS as `0x${string}`) || '0x321eB27CA443ED279503b121E1e0c8D87a4f4B51'
     
     // For Phase 2, use the simplest possible format like TestPaymasterAcceptAll
     // Just return the paymaster address with minimal data
