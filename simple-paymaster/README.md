@@ -61,7 +61,12 @@ pnpm run dev
 
 ```bash
 # 部署到 Cloudflare
-pnpm run deploy
+pnpm run deploy --env production
+```
+
+**生产环境 URL:**
+```
+https://anode-simple-paymaster-prod.jhfnetboy.workers.dev
 ```
 
 ## API

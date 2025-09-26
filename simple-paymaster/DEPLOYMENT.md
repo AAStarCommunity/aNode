@@ -73,8 +73,19 @@ curl -X POST http://localhost:8787/api/v1/paymaster/process \
 
 ```bash
 # 部署到 Cloudflare Workers
-pnpm run deploy
+pnpm wrangler deploy --env production
 ```
+
+## 🎉 部署成功！
+
+**生产环境 URL:**
+```
+https://anode-simple-paymaster-prod.jhfnetboy.workers.dev
+```
+
+**API 端点:**
+- Health Check: `GET /health`
+- Paymaster API: `POST /api/v1/paymaster/process`
 
 ## 🔧 配置验证
 
