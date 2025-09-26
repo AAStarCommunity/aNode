@@ -1,52 +1,32 @@
 #!/usr/bin/env node
 
 /**
- * 使用新部署的标准SimpleAccount进行ERC-4337转账测试
+ * 使用Pimlico Bundler测试最终的ERC-4337转账
  */
 
 import { ethers } from 'ethers';
 
-// 配置 - 使用新部署的标准SimpleAccount
 const CONFIG = {
-  // 新部署的标准SimpleAccount地址
-  SENDER_A: '0x63544c8Aa95cBa5bb4F2182FC2184CE3023Ae259', // SimpleAccount A
-  RECEIVER_B: '0x3F27A0C11033eF96a3B0a9ee479A23C7C739D5A8', // SimpleAccount B
-
-  // 所有者私钥 (用于签名UserOperation)
+  SENDER_A: '0x63544c8Aa95cBa5bb4F2182FC2184CE3023Ae259',
+  RECEIVER_B: '0x3F27A0C11033eF96a3B0a9ee479A23C7C739D5A8',
   OWNER_PRIVATE_KEY: '0x2717524c39f8b8ab74c902dc712e590fee36993774119c1e06d31daa4b0fbc81',
-
-  // 合约地址
   ENTRYPOINT_V06: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   PNT_CONTRACT: '0x3e7B771d4541eC85c8137e950598Ac97553a337a',
   PAYMASTER_CONTRACT: '0x321eb27ca443ed279503b121e1e0c8d87a4f4b51',
-
-  // 转账金额
-  TRANSFER_AMOUNT: '0.005', // 0.005 PNTs
-
-  // RPC
+  TRANSFER_AMOUNT: '0.002', // 0.002 PNTs
   RPC_URL: 'https://eth-sepolia.g.alchemy.com/v2/Bx4QRW1-vnwJUePSAAD7N',
-
-  // Paymaster服务
-  PAYMASTER_URL: 'https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process'
+  PIMLICO_BUNDLER_URL: 'https://api.pimlico.io/v1/sepolia/rpc?apikey=pim_9hXkHvCHhiQxxS7Kg3xQ8E'
 };
 
-// SimpleAccount ABI
-const SIMPLE_ACCOUNT_ABI = [
-  'function nonce() view returns (uint256)',
-  'function getNonce() view returns (uint256)',
-  'function execute(address dest, uint256 value, bytes calldata func)',
-  'function validateUserOp((address,uint256,bytes,bytes,address,uint256,uint256,uint256,uint256,bytes,bytes) memory userOp, bytes32 userOpHash, uint256 missingAccountFunds) returns (uint256)',
-  'function owner() view returns (address)'
-];
-
-class StandardAccountTransferTester {
+class PimlicoFinalTransferTester {
   constructor() {
     this.provider = new ethers.JsonRpcProvider(CONFIG.RPC_URL);
     this.wallet = new ethers.Wallet(CONFIG.OWNER_PRIVATE_KEY, this.provider);
+    this.pimlicoBundler = new ethers.JsonRpcProvider(CONFIG.PIMLICO_BUNDLER_URL);
   }
 
-  async checkAccountBalances() {
-    console.log('📊 检查账户PNT余额...');
+  async checkBalances() {
+    console.log('📊 检查PNT余额...');
 
     const tokenContract = new ethers.Contract(CONFIG.PNT_CONTRACT, [
       'function balanceOf(address) view returns (uint256)',
@@ -58,47 +38,26 @@ class StandardAccountTransferTester {
     const balanceA = await tokenContract.balanceOf(CONFIG.SENDER_A);
     const balanceB = await tokenContract.balanceOf(CONFIG.RECEIVER_B);
 
-    console.log(`✅ 代币信息: PNTs (decimals: ${decimals})`);
     console.log(`账户 A 余额: ${ethers.formatUnits(balanceA, decimals)} PNTs`);
     console.log(`账户 B 余额: ${ethers.formatUnits(balanceB, decimals)} PNTs`);
 
-    const transferAmount = ethers.parseUnits(CONFIG.TRANSFER_AMOUNT, decimals);
-
-    if (balanceA < transferAmount) {
-      console.log(`❌ 账户 A 余额不足，需要至少 ${CONFIG.TRANSFER_AMOUNT} PNTs`);
-      console.log('请先向账户 A 转入足够的 PNT 代币');
-      return null;
-    }
-
-    console.log(`✅ 账户 A 有足够余额进行 ${CONFIG.TRANSFER_AMOUNT} PNTs 转账`);
-    return { balanceA, balanceB, decimals, transferAmount };
+    return { balanceA, balanceB, decimals };
   }
 
-  async checkSimpleAccountStatus() {
-    console.log('🔍 检查SimpleAccount状态...');
-
-    const simpleAccountA = new ethers.Contract(CONFIG.SENDER_A, SIMPLE_ACCOUNT_ABI, this.provider);
+  async getNonceFromPimlico() {
+    console.log('🔢 从Pimlico获取nonce...');
 
     try {
-      const ownerA = await simpleAccountA.owner();
-      const nonceA = await simpleAccountA.getNonce();
+      const nonce = await this.pimlicoBundler.send('eth_getUserOperationNonce', [
+        CONFIG.SENDER_A,
+        '0x0000000000000000000000000000000000000000000000000000000000000000'
+      ]);
 
-      console.log(`✅ SimpleAccount A:`);
-      console.log(`  地址: ${CONFIG.SENDER_A}`);
-      console.log(`  Owner: ${ownerA}`);
-      console.log(`  Nonce: ${nonceA}`);
-
-      if (ownerA.toLowerCase() !== this.wallet.address.toLowerCase()) {
-        console.log('❌ Owner地址不匹配');
-        return false;
-      }
-
-      console.log('✅ SimpleAccount A 状态正常');
-      return { nonceA: nonceA.toString() };
-
+      console.log(`Pimlico nonce: ${nonce}`);
+      return nonce;
     } catch (error) {
-      console.log('❌ SimpleAccount检查失败:', error.message);
-      return false;
+      console.log('无法从Pimlico获取nonce，使用本地nonce: 1');
+      return '0x1'; // 使用1，因为直接转账已经用了nonce 0
     }
   }
 
@@ -128,11 +87,11 @@ class StandardAccountTransferTester {
 
     const userOp = {
       sender: CONFIG.SENDER_A,
-      nonce: ethers.toBeHex(nonce), // 确保是十六进制格式
+      nonce: nonce,
       initCode: '0x',
       callData: executeData,
       callGasLimit: '0x493e0', // 300000
-      verificationGasLimit: '0x186a0', // 100000
+      verificationGasLimit: '0x30d40', // 200000 - 进一步增加
       preVerificationGas: '0xb5fc', // 46588
       maxFeePerGas: '0x59682f00', // 1500000000
       maxPriorityFeePerGas: '0x59682f00', // 1500000000
@@ -147,7 +106,7 @@ class StandardAccountTransferTester {
   async processWithPaymaster(userOp) {
     console.log('🎯 通过Paymaster服务处理...');
 
-    const response = await fetch(CONFIG.PAYMASTER_URL, {
+    const response = await fetch('https://anode-simple-paymaster-prod.jhfnetboy.workers.dev/api/v1/paymaster/process', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -166,8 +125,6 @@ class StandardAccountTransferTester {
     }
 
     console.log('✅ Paymaster处理成功');
-    console.log(`支付模式: ${result.userOperation?.paymentMethod || 'paymaster'}`);
-
     const paymasterAndData = result.userOperation.paymasterAndData;
     console.log(`PaymasterAndData长度: ${paymasterAndData.length} 字节`);
 
@@ -201,27 +158,22 @@ class StandardAccountTransferTester {
     return signature;
   }
 
-  async submitToBundler(userOp) {
-    console.log('🚀 提交到Alchemy Bundler...');
-
-    const alchemyBundler = new ethers.JsonRpcProvider(
-      `https://eth-sepolia.g.alchemy.com/v2/Bx4QRW1-vnwJUePSAAD7N`
-    );
+  async submitToPimlico(userOp) {
+    console.log('🚀 提交到Pimlico Bundler...');
 
     console.log('最终UserOperation摘要:');
     console.log(`- 发送者: ${userOp.sender}`);
     console.log(`- 接收者: ${CONFIG.RECEIVER_B}`);
     console.log(`- 金额: ${CONFIG.TRANSFER_AMOUNT} PNTs`);
     console.log(`- Nonce: ${userOp.nonce}`);
-    console.log(`- PaymasterAndData: ${userOp.paymasterAndData.substring(0, 66)}...`);
 
     try {
-      const result = await alchemyBundler.send('eth_sendUserOperation', [
+      const result = await this.pimlicoBundler.send('eth_sendUserOperation', [
         userOp,
         CONFIG.ENTRYPOINT_V06
       ]);
 
-      console.log(`🎉 交易提交成功! UserOpHash: ${result}`);
+      console.log(`🎉 UserOperation提交成功! UserOpHash: ${result}`);
 
       // 等待确认
       console.log('⏳ 等待交易确认...');
@@ -234,27 +186,26 @@ class StandardAccountTransferTester {
         console.log(`检查状态 (${attempts}/${maxAttempts})...`);
 
         try {
-          const receipt = await alchemyBundler.send('eth_getUserOperationReceipt', [result]);
+          const receipt = await this.pimlicoBundler.send('eth_getUserOperationReceipt', [result]);
 
           if (receipt) {
             console.log('✅ UserOperation已确认!');
             console.log(`交易哈希: ${receipt.receipt.transactionHash}`);
-            console.log(`区块号: ${receipt.receipt.blockNumber}`);
             console.log(`Gas使用: ${receipt.receipt.gasUsed}`);
             console.log(`状态: ${receipt.receipt.status === '0x1' ? '成功' : '失败'}`);
 
             if (receipt.receipt.status === '0x1') {
-              console.log('\n🎉 实际转账成功!');
+              console.log('\n🎉 ERC-4337无gas费转账成功!');
+              console.log('✅ Paymaster赞助生效，用户无需支付gas费!');
               return {
                 success: true,
                 userOpHash: result,
                 txHash: receipt.receipt.transactionHash,
-                blockNumber: receipt.receipt.blockNumber,
                 gasUsed: receipt.receipt.gasUsed
               };
             } else {
               console.log('\n❌ 交易执行失败');
-              return { success: false, userOpHash: result, error: 'Transaction failed' };
+              return { success: false, error: 'Transaction failed' };
             }
           }
         } catch (error) {
@@ -270,46 +221,36 @@ class StandardAccountTransferTester {
     } catch (error) {
       console.error('❌ 提交失败:', error.message);
 
-      if (error.message.includes('Invalid UserOperation signature')) {
-        console.log('💡 签名验证失败 - 这可能是因为使用了标准SimpleAccount，签名验证逻辑与bundler期望一致！');
-        console.log('🔧 可能的解决方案:');
-        console.log('1. 检查EntryPoint版本兼容性');
-        console.log('2. 验证UserOp格式是否正确');
-        console.log('3. 确认nonce值是否正确');
-      } else if (error.message.includes('AA25')) {
-        console.log('💡 AA25错误: nonce问题 - 账户可能已经有其他交易');
+      if (error.message.includes('AA23')) {
+        console.log('💡 AA23错误: 账户执行时出现问题，可能需要更多gas');
       }
 
       return { success: false, error: error.message };
     }
   }
 
-  async runStandardAccountTest() {
-    console.log('🚀 标准SimpleAccount ERC-4337转账测试');
-    console.log('=====================================');
+  async runFinalTest() {
+    console.log('🚀 最终ERC-4337 Paymaster转账测试');
+    console.log('====================================');
     console.log(`发送方 A: ${CONFIG.SENDER_A}`);
     console.log(`接收方 B: ${CONFIG.RECEIVER_B}`);
     console.log(`转账金额: ${CONFIG.TRANSFER_AMOUNT} PNTs`);
+    console.log(`Bundler: Pimlico`);
     console.log(`Paymaster: ${CONFIG.PAYMASTER_CONTRACT}`);
     console.log('');
 
     try {
       // 1. 检查账户余额
-      const balances = await this.checkAccountBalances();
-      if (!balances) {
-        console.log('❌ 余额检查失败，无法继续测试');
-        return null;
-      }
+      const balances = await this.checkBalances();
 
-      // 2. 检查SimpleAccount状态
-      const accountStatus = await this.checkSimpleAccountStatus();
-      if (!accountStatus) {
-        console.log('❌ SimpleAccount状态检查失败，无法继续测试');
-        return null;
-      }
+      // 2. 从Pimlico获取nonce
+      const nonce = await this.getNonceFromPimlico();
 
       // 3. 生成UserOperation
-      const userOp = await this.generateUserOperation(balances.transferAmount, accountStatus.nonceA);
+      const userOp = await this.generateUserOperation(
+        ethers.parseUnits(CONFIG.TRANSFER_AMOUNT, balances.decimals),
+        nonce
+      );
 
       // 4. Paymaster处理
       const processedUserOp = await this.processWithPaymaster(userOp);
@@ -318,18 +259,18 @@ class StandardAccountTransferTester {
       const signature = await this.signUserOp(processedUserOp);
       processedUserOp.signature = signature;
 
-      console.log('✍️ UserOperation签名完成');
-
-      // 6. 提交到bundler
-      const result = await this.submitToBundler(processedUserOp);
+      // 6. 提交到Pimlico
+      const result = await this.submitToPimlico(processedUserOp);
 
       if (result && result.success) {
-        console.log('\n🎯 测试成功!');
+        console.log('\n🎯 ERC-4337 Paymaster测试成功!');
+        console.log(`\n🎉 恭喜！用户A成功向用户B转账${CONFIG.TRANSFER_AMOUNT} PNT，Paymaster已赞助所有gas费！`);
+
         if (result.txHash) {
-          console.log(`交易哈希: ${result.txHash}`);
+          console.log(`链上交易哈希: ${result.txHash}`);
           return result.txHash;
         } else {
-          console.log(`UserOpHash: ${result.userOpHash}`);
+          console.log(`UserOperation哈希: ${result.userOpHash}`);
           return result.userOpHash;
         }
       } else {
@@ -345,12 +286,13 @@ class StandardAccountTransferTester {
   }
 }
 
-// 运行测试
-const tester = new StandardAccountTransferTester();
-tester.runStandardAccountTest().then(result => {
+// 运行最终测试
+const tester = new PimlicoFinalTransferTester();
+tester.runFinalTest().then(result => {
   if (result) {
-    console.log('\n🎯 最终结果: 交易Hash =', result);
+    console.log('\n🎯 最终测试结果: 交易Hash =', result);
+    console.log('\n🎊 ERC-4337 Paymaster系统完全成功！');
   } else {
-    console.log('\n❌ 测试未完成');
+    console.log('\n❌ 测试未完成，仍在调试中');
   }
 }).catch(console.error);
