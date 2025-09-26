@@ -16,13 +16,24 @@ entryPoint = new EntryPoint();  // 🚀 部署全新的EntryPoint合约
 - ✅ **结果**: `addStake(86400)` → `unstakeDelay = 86400秒`
 - ✅ **断言通过**: `vm.assertEq(info.unstakeDelaySec, UNSTAKE_DELAY, "Paymaster should have correct unstake delay");`
 
-### Sepolia测试网环境
+### Sepolia测试网环境 (❌ 基础设施bug)
+
+#### EntryPoint v0.6 (❌ 有bug)
 ```solidity
-// 我们部署的Pimlico paymaster
-address entryPoint = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789; // Sepolia官方EntryPoint
+// Pimlico合约地址: 0xdaf2aBA9109BD31e945B0695d893fBDc283d68d1
+address entryPoint = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+addStake(86400) → unstakeDelay = 1秒  // ❌ 始终是1秒！
 ```
-- ❌ **结果**: `addStake(86400)` → `unstakeDelay = 1秒`
-- ❌ **影响**: 无法满足Alchemy Bundler的86400秒最低要求
+
+#### EntryPoint v0.7 (❌ 同样有bug)
+```solidity
+// Pimlico合约地址: 0x44A2F474b395cf946950620c4A4df1406fA9383d
+address entryPoint = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
+addStake(86400) → unstakeDelay = 1秒  // ❌ 仍然是1秒！
+addStake(604800) → unstakeDelay = 1秒  // ❌ 无论什么值都一样！
+```
+
+**测试结果**: Sepolia上的EntryPoint v0.6和v0.7都有相同bug，无论传入什么`unstakeDelaySec`值，都设置成1秒
 
 ## 🔬 技术分析
 
@@ -40,10 +51,12 @@ address entryPoint = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789; // Sepolia官�
 
 ## 💡 解决方案
 
-### 方案1: 部署自己的EntryPoint (推荐)
+### 方案1: 部署自己的EntryPoint (❌ 失败 - 合约过大)
 ```bash
-# 在Sepolia上部署我们自己的EntryPoint
-forge script DeployEntryPoint.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
+# 尝试部署我们自己的EntryPoint到Sepolia
+forge script DeployOurEntryPoint.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast
+# 结果: EntryPoint合约大小 25643 bytes > 24576 bytes (限制)
+# ❌ 无法部署，合约超过大小限制
 ```
 
 ### 方案2: 使用EntryPoint v0.7

@@ -3,9 +3,9 @@ import { ethers } from 'ethers';
 const provider = new ethers.JsonRpcProvider('https://eth-sepolia.g.alchemy.com/v2/Bx4QRW1-vnwJUePSAAD7N');
 const signer = new ethers.Wallet('0x2717524c39f8b8ab74c902dc712e590fee36993774119c1e06d31daa4b0fbc81', provider);
 
-// Pimlico paymaster address
-const pimlicoPaymasterAddress = '0xdaf2aBA9109BD31e945B0695d893fBDc283d68d1';
-const entryPointAddress = '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789';
+// Pimlico paymaster address (EntryPoint v0.7)
+const pimlicoPaymasterAddress = '0x44A2F474b395cf946950620c4A4df1406fA9383d';
+const entryPointAddress = '0x0000000071727De22E5E9d8BAf0edAc6f37da032';
 
 const paymasterAbi = [
   'function addStake(uint32 unstakeDelaySec) external payable',
@@ -34,23 +34,29 @@ async function checkStakeInfo() {
 
 async function testAddStake() {
   try {
-    console.log('=== 测试Pimlico Paymaster addStake ===');
+    console.log('=== 测试Pimlico Paymaster (EntryPoint v0.7) addStake ===');
 
     // 检查初始状态
     console.log('初始状态:');
     await checkStakeInfo();
 
-    // 尝试添加stake，设置unstakeDelay为86400秒 (1天)
-    console.log('\n正在调用addStake(86400) with 0.01 ETH...');
-    const tx = await paymaster.addStake(86400, { value: ethers.parseEther('0.01') });
-    console.log('交易已发送:', tx.hash);
+    // 测试不同的unstakeDelay值
+    const testDelays = [30, 300, 3600, 86400, 604800]; // 30秒, 5分钟, 1小时, 1天, 1周
 
-    const receipt = await tx.wait();
-    console.log('交易已确认，block:', receipt.blockNumber);
+    for (const delay of testDelays) {
+      console.log(`\n正在调用addStake(${delay}) with 0.01 ETH...`);
+      try {
+        const tx = await paymaster.addStake(delay, { value: ethers.parseEther('0.01') });
+        console.log('交易已发送:', tx.hash);
+        const receipt = await tx.wait();
+        console.log('交易已确认，block:', receipt.blockNumber);
 
-    // 检查最终状态
-    console.log('\n最终状态:');
-    await checkStakeInfo();
+        console.log(`addStake(${delay})后的状态:`);
+        await checkStakeInfo();
+      } catch (error) {
+        console.error(`addStake(${delay})失败:`, error.message);
+      }
+    }
 
   } catch (error) {
     console.error('❌ 错误:', error.message);

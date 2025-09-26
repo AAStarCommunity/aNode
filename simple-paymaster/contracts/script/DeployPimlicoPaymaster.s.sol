@@ -6,8 +6,8 @@ import { SingletonPaymasterV6 } from "../src/pimlico/SingletonPaymasterV6.sol";
 import { console } from "forge-std/console.sol";
 
 contract DeployPimlicoPaymaster is Script {
-    // EntryPoint v0.6 address on Sepolia
-    address constant ENTRY_POINT_V06 = 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
+    // EntryPoint v0.7 address on Sepolia
+    address constant ENTRY_POINT_V07 = 0x0000000071727De22E5E9d8BAf0edAc6f37da032;
 
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
@@ -20,7 +20,7 @@ contract DeployPimlicoPaymaster is Script {
         signers[0] = deployerAddress; // Owner is also the signer
 
         SingletonPaymasterV6 paymaster = new SingletonPaymasterV6(
-            ENTRY_POINT_V06,    // entryPoint
+            ENTRY_POINT_V07,    // entryPoint
             deployerAddress,    // owner
             deployerAddress,    // manager
             signers             // initial signers
@@ -29,7 +29,7 @@ contract DeployPimlicoPaymaster is Script {
         vm.stopBroadcast();
 
         console.log("Pimlico SingletonPaymasterV6 deployed at:", address(paymaster));
-        console.log("EntryPoint:", ENTRY_POINT_V06);
+        console.log("EntryPoint:", ENTRY_POINT_V07);
         console.log("Owner/Manager/Signer:", deployerAddress);
     }
 }

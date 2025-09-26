@@ -2,12 +2,22 @@
 
 ## 🎯 Pimlico合约测试记录
 
-### 关键发现：Sepolia EntryPoint v0.6 Bug
-- **Pimlico合约地址**: `0xdaf2aBA9109BD31e945B0695d893fBDc283d68d1`
-- **测试结果**: `addStake(86400)` → `unstakeDelay = 1秒`
-- **结论**: Sepolia EntryPoint v0.6有bug，始终设置unstakeDelay为1秒
+### 关键发现：Sepolia EntryPoint v0.6 & v0.7 Bug
+- **Pimlico v0.6合约地址**: `0xdaf2aBA9109BD31e945B0695d893fBDc283d68d1`
+- **Pimlico v0.7合约地址**: `0x44A2F474b395cf946950620c4A4df1406fA9383d`
+- **测试结果**: `addStake(86400)` → `unstakeDelay = 1秒` (无论v0.6还是v0.7)
+- **结论**: Sepolia EntryPoint合约有bug，始终设置unstakeDelay为1秒
 - **对比**: Pimlico本地测试能正确设置delay，但在Sepolia上不行
 - **影响**: 无法满足Alchemy Bundler的86400秒最低要求
+
+## 🎯 aNodePaymaster生产版本
+
+### 最新部署 (2025-09-26)
+- **合约地址**: `0x321eb27ca443ed279503b121e1e0c8d87a4f4b51`
+- **EntryPoint**: `0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789` (v0.6)
+- **Owner**: `0x411BD567E46C0781248dbB6a9211891C032885e5`
+- **版本**: 生产就绪，带有真实ECDSA签名验证
+- **状态**: ✅ 已部署并验证
 
 ## 🎉 项目完成状态：完全成功！
 
