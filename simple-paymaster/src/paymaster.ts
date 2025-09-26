@@ -261,10 +261,22 @@ export class aNodePaymaster {
     const paymasterHash = ethers.keccak256(hashInput)
     const finalHash = ethers.keccak256(ethers.concat([paymasterHash, ethers.zeroPadValue(ethers.toBeHex(11155111), 32)])) // Sepolia chainId
 
-    // Sign using Ethereum signed message format
-    const wallet = new ethers.Wallet(this.env.PAYMASTER_PRIVATE_KEY)
-    const signature = await wallet.signMessage(ethers.getBytes(finalHash))
+    // Sign using the same format as Solidity contract
+    // The contract does: finalHash.toEthSignedMessageHash().recover(signature)
+    // Which means: keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", finalHash)).recover(signature)
+    // In ethers.js: ethers.hashMessage(finalHash).recover(signature)
+    // So we need to sign the message hash directly
 
+    const messageToSign = ethers.hashMessage(ethers.getBytes(finalHash))
+    console.log('🔑 Final hash:', finalHash)
+    console.log('🔑 Message to sign (eth signed message hash):', messageToSign)
+
+    const wallet = new ethers.Wallet(this.env.PAYMASTER_PRIVATE_KEY)
+
+    // Sign the message hash directly (this is what the contract expects)
+    const signature = await wallet.signMessage(ethers.getBytes(messageToSign))
+
+    console.log('✅ Generated signature:', signature)
     return signature
   }
 
