@@ -37,3 +37,12 @@
 [submodule "vendor/rundler"]
 	path = vendor/rundler
 	url = git@github.com:alchemyplatform/rundler.git
+[submodule "simple-paymaster/contracts/lib/forge-std"]
+	path = simple-paymaster/contracts/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "simple-paymaster/contracts/lib/account-abstraction"]
+	path = simple-paymaster/contracts/lib/account-abstraction
+	url = https://github.com/eth-infinitism/account-abstraction
+[submodule "simple-paymaster/contracts/lib/openzeppelin-contracts"]
+	path = simple-paymaster/contracts/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts

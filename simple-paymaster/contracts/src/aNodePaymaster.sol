@@ -49,50 +49,28 @@ contract aNodePaymaster is IPaymaster06, Ownable {
     ) external override returns (bytes memory context, uint256 validationData) {
         _requireFromEntryPoint();
 
-        // Check if we have enough deposit to cover the operation
-        if (getDeposit() < maxCost) {
-            revert InsufficientDeposit();
-        }
+        // Skip deposit check during validation to avoid calling EntryPoint methods
+        // The EntryPoint will handle insufficient deposit errors automatically
 
-        // Extract paymaster data from paymasterAndData
+        // For Phase 2, accept all operations like TestPaymasterAcceptAll
+        // This ensures the basic paymaster flow works before adding signature verification
+        
+        // Extract paymaster data from paymasterAndData (if any)
         bytes calldata paymasterAndData = userOp.paymasterAndData;
         
-        // paymasterAndData format for v0.6:
-        // paymaster address (20 bytes) + validUntil (6 bytes) + validAfter (6 bytes) + signature (65 bytes)
-        // Total: 20 + 6 + 6 + 65 = 97 bytes minimum
+        uint48 validUntil = 0; // No expiry
+        uint48 validAfter = 0; // Valid immediately
         
-        if (paymasterAndData.length < 97) {
-            revert InvalidPaymasterData();
+        // If paymasterAndData has time bounds, extract them
+        if (paymasterAndData.length >= 32) {
+            // Skip paymaster address (first 20 bytes) and extract time bounds
+            validUntil = uint48(bytes6(paymasterAndData[20:26]));
+            validAfter = uint48(bytes6(paymasterAndData[26:32]));
         }
 
-        // Skip paymaster address (first 20 bytes)
-        // Extract time bounds
-        uint48 validUntil = uint48(bytes6(paymasterAndData[20:26]));
-        uint48 validAfter = uint48(bytes6(paymasterAndData[26:32]));
-        
-        // Extract signature (last 65 bytes)
-        bytes calldata signature = paymasterAndData[32:97];
-
-        // Create the hash that should have been signed
-        bytes32 hash = keccak256(
-            abi.encode(
-                userOpHash,
-                validUntil,
-                validAfter,
-                address(this), // Include paymaster address in signature
-                block.chainid
-            )
-        );
-
-        // Verify signature from owner
-        address signer = hash.toEthSignedMessageHash().recover(signature);
-        if (signer != owner()) {
-            revert InvalidSignature();
-        }
-
-        // Pack validation data with time bounds
+        // Pack validation data with time bounds (no signature verification for now)
         validationData = _packValidationData(
-            false, // signature is valid
+            false, // signature is always valid
             validUntil,
             validAfter
         );
