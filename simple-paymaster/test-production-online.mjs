@@ -259,8 +259,8 @@ class ProductionTester {
       const paymasterAndData = result.userOperation.paymasterAndData;
       console.log(`PaymasterAndData 长度: ${paymasterAndData.length - 2} 字节`);
 
-      if (paymasterAndData.length !== 66) { // 0x + 64 chars
-        console.log('⚠️  PaymasterAndData 长度异常，期望 64 字节');
+      if (paymasterAndData.length !== 194) { // 0x + 192 chars (96 bytes) for new format
+        console.log('⚠️  PaymasterAndData 长度异常，期望 192 字节');
       }
 
       console.log('');

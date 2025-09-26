@@ -49,36 +49,63 @@ contract aNodePaymaster is IPaymaster06, Ownable {
     ) external override returns (bytes memory context, uint256 validationData) {
         _requireFromEntryPoint();
 
-        // Skip deposit check during validation to avoid calling EntryPoint methods
-        // The EntryPoint will handle insufficient deposit errors automatically
-
-        // For Phase 2, accept all operations like TestPaymasterAcceptAll
-        // This ensures the basic paymaster flow works before adding signature verification
-        
-        // Extract paymaster data from paymasterAndData (if any)
+        // Extract paymaster data from paymasterAndData
         bytes calldata paymasterAndData = userOp.paymasterAndData;
-        
-        uint48 validUntil = 0; // No expiry
-        uint48 validAfter = 0; // Valid immediately
-        
-        // If paymasterAndData has time bounds, extract them
-        if (paymasterAndData.length >= 32) {
-            // Skip paymaster address (first 20 bytes) and extract time bounds
-            validUntil = uint48(bytes6(paymasterAndData[20:26]));
-            validAfter = uint48(bytes6(paymasterAndData[26:32]));
+
+        // Minimum length: paymaster address (20) + validUntil (6) + validAfter (6) + signature (65) = 97 bytes
+        if (paymasterAndData.length < 97) {
+            revert InvalidPaymasterData();
         }
 
-        // Pack validation data with time bounds (no signature verification for now)
+        // Extract time bounds
+        uint48 validUntil = uint48(bytes6(paymasterAndData[20:26]));
+        uint48 validAfter = uint48(bytes6(paymasterAndData[26:32]));
+
+        // Extract signature (last 65 bytes)
+        bytes calldata signature = paymasterAndData[32:97];
+
+        // Create the hash according to TypeScript implementation
+        // Split to avoid stack too deep error
+        bytes32 callDataHash = keccak256(userOp.callData);
+        bytes32 initCodeHash = keccak256(userOp.initCode);
+        bytes32 paymasterDataHash = keccak256(userOp.paymasterAndData[0:32]);
+
+        bytes32 paymasterHash = keccak256(
+            abi.encodePacked(
+                userOp.sender,
+                userOp.nonce,
+                userOp.callGasLimit,
+                userOp.verificationGasLimit,
+                userOp.preVerificationGas,
+                userOp.maxFeePerGas,
+                userOp.maxPriorityFeePerGas,
+                callDataHash,
+                initCodeHash,
+                paymasterDataHash
+            )
+        );
+
+        bytes32 finalHash = keccak256(abi.encodePacked(paymasterHash, block.chainid));
+        bytes32 ethSignedMessageHash = finalHash.toEthSignedMessageHash();
+
+        // Verify signature
+        address recoveredSigner = ethSignedMessageHash.recover(signature);
+
+        // Verify signer is owner
+        if (recoveredSigner != owner()) {
+            revert InvalidSignature();
+        }
+
+        // Pack validation data with time bounds
         validationData = _packValidationData(
-            false, // signature is always valid
+            false, // signature verification passed
             validUntil,
             validAfter
         );
 
         // For unstaked paymaster, we must return empty context
-        // Only staked paymasters can return context data
         context = "";
-        
+
         return (context, validationData);
     }
 
@@ -129,6 +156,7 @@ contract aNodePaymaster is IPaymaster06, Ownable {
      * @param unstakeDelaySec The unstake delay for this paymaster
      */
     function addStake(uint32 unstakeDelaySec) external payable onlyOwner {
+        require(unstakeDelaySec > 0, "unstake delay must be greater than 0");
         entryPoint.addStake{value: msg.value}(unstakeDelaySec);
     }
 
@@ -138,6 +166,7 @@ contract aNodePaymaster is IPaymaster06, Ownable {
     function getDeposit() public view returns (uint256) {
         return entryPoint.balanceOf(address(this));
     }
+
 
     /**
      * @notice Unlock the stake (owner only)
