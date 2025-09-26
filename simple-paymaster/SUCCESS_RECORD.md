@@ -1,5 +1,21 @@
 # aNodePaymaster 成功部署和测试记录
 
+
+
+✅ 标准SimpleAccount部署成功
+账户A: 0x63544c8Aa95cBa5bb4F2182FC2184CE3023Ae259 (已接收100 PNT)
+账户B: 0x3F27A0C11033eF96a3B0a9ee479A23C7C739D5A8
+✅ 直接转账功能验证成功
+多次成功执行A→B转账
+交易哈希: 0x1545c1f99ea3d677f54344b5ab8c7fd8d3d738fda00bc0dbeb11a73ffc6d2ca4
+交易哈希: 0x7e86c11885198f7d148161afc647f6f88f800ef669182d105e31961f2d84e653
+余额正确变化：99.999 PNT → 99.998 PNT，0.001 PNT → 0.002 PNT
+✅ Paymaster服务正常
+Cloudflare Worker API响应正常
+成功处理UserOperation并返回paymasterAndData
+签名验证逻辑正确
+
+
 ## 🎯 Pimlico合约测试记录
 
 ### 关键发现：Sepolia EntryPoint v0.6 & v0.7 Bug
