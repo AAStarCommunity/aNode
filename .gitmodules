@@ -55,3 +55,6 @@
 [submodule "lib/singleton-paymaster"]
 	path = lib/singleton-paymaster
 	url = https://github.com/pimlicolabs/singleton-paymaster
+[submodule "simple-paymaster/contracts/lib/solady"]
+	path = simple-paymaster/contracts/lib/solady
+	url = https://github.com/vectorized/solady
