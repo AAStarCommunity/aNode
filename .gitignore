@@ -38,3 +38,6 @@ Cargo.lock
 # scripts-flow node_modules and env files
 scripts-flow/node_modules/
 scripts-flow/.env
+
+cache/
+broadcast/
