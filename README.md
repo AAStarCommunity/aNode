@@ -1,5 +1,6 @@
 # aNode
-aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
+
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)aNode is a permissionless and public goods for community to support their own ERC-20 token for gas sponsor, useroperation security check and more feats.
 
 - ERC-4337 bundler support (Pimlico, Alchemy, AAStar Rundler)
 - ERC-20 PNTs and Community customized ERC-20 gas token support
@@ -44,4 +45,6 @@ It act as a off chain signer(can rotate) after verifying their pre-setting rules
 ## Register on SuperPaymaster to run
 This mechanism requires SuperPaymaster(include one contract and permissionless relays), which act as a register, a stake contract and smart router(relay do this). 
 
+## License
 
+Licensed under the [Apache License, Version 2.0](https://opensource.org/licenses/Apache-2.0). See [LICENSE](./LICENSE) for details.
